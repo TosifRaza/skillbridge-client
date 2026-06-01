@@ -1,0 +1,55 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // Required for HttpOnly refresh token cookies
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to attach Access Token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor for global error handling & token refresh
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If 401 and haven't retried yet, attempt token refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const response = await axiosInstance.post('/auth/refresh');
+        const { accessToken } = response.data.data;
+        
+        localStorage.setItem('accessToken', accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        
+        return axiosInstance(originalRequest); // Retry original request
+      } catch (refreshError) {
+        // Refresh failed, force logout
+        localStorage.removeItem('accessToken');
+        window.location.href = '/auth/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default axiosInstance;
