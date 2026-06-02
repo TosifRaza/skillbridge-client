@@ -1,26 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '@/store/hooks'; // Import Redux hook
 import axiosInstance from '@/api/axiosInstance';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { PHASE_1_SERVICES } from '@/constants/services'; // STRICT MVP V1 CATEGORIES ONLY
 
-const categories = [
-  { value: 'House Cleaning', label: '🧹 House Cleaning' },
-  { value: 'Moving Helper', label: '📦 Moving Helper' },
-  { value: 'Electrician', label: '⚡ Electrician' },
-  { value: 'Plumber', label: '🔧 Plumber' },
-  { value: 'Web Development', label: '💻 Web Development' },
-  { value: 'Graphic Design', label: '🎨 Graphic Design' },
-];
+// Generate categories from our strict constants file
+const categories = PHASE_1_SERVICES.map(service => ({
+  value: service.name,
+  label: `${service.emoji} ${service.name}`
+}));
 
 const PostJob = () => {
   const navigate = useNavigate();
+  const { city } = useAppSelector((state) => state.location); // 1. Get Global City
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
   const [formData, setFormData] = useState({
-    title: '', description: '', category: 'House Cleaning', budget: '', deadline: '', address: '', latitude: '40.7128', longitude: '-74.0060'
+    title: '', 
+    description: '', 
+    category: 'House Cleaning', 
+    budget: '', 
+    deadline: '', 
+    address: city || 'Mumbai', // 2. Pre-fill with selected city
+    latitude: '22.5726',       // Default India coords (Kolkata)
+    longitude: '88.3639'
   });
   const [images, setImages] = useState([]);
 
@@ -32,9 +41,20 @@ const PostJob = () => {
     setError(null);
 
     try {
-      // Must send as multipart/form-data because of images
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      
+      // Append text fields
+      Object.keys(formData).forEach(key => {
+        data.append(key, formData[key]);
+      });
+
+      // 3. Ensure the address contains the selected city for backend filtering
+      // This is the Phase A integration without the broken 'serviceType' variable
+      if (!formData.address.toLowerCase().includes(city.toLowerCase())) {
+        data.set('address', `${formData.address}, ${city}`);
+      }
+
+      // Append images
       if (images) {
         for (let i = 0; i < images.length; i++) {
           data.append('images', images[i]);
@@ -45,7 +65,7 @@ const PostJob = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      navigate('/dashboard'); // Redirect to dashboard on success
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to post job');
     } finally {
@@ -56,17 +76,18 @@ const PostJob = () => {
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
       <h1 className="text-3xl font-bold text-surface-900 mb-2">Post a New Job</h1>
-      <p className="text-surface-500 mb-8">Describe your problem to get the best bids from professionals.</p>
+      <p className="text-surface-500 mb-8">Describe your problem to get the best bids from local professionals in {city}.</p>
 
       <Card>
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">⚠️ {error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-5">
-          <Input label="Job Title" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Need a plumber to fix kitchen sink" required />
+          <Input label="Job Title" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Need help moving a sofa" required />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* 4. Using STRICT Phase 1 Categories */}
             <Select label="Category" name="category" value={formData.category} onChange={handleChange} options={categories} />
-            <Input label="Budget ($)" name="budget" type="number" value={formData.budget} onChange={handleChange} placeholder="100" required />
+            <Input label="Budget (₹)" name="budget" type="number" value={formData.budget} onChange={handleChange} placeholder="500" required />
           </div>
 
           <div className="mb-4">
@@ -76,7 +97,7 @@ const PostJob = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Input label="Deadline" name="deadline" type="date" value={formData.deadline} onChange={handleChange} required />
-            <Input label="Location Address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St, NY" required />
+            <Input label="Location Address" name="address" value={formData.address} onChange={handleChange} placeholder="Sector V, Salt Lake" required />
           </div>
 
           <div className="mb-4">

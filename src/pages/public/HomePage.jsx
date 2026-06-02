@@ -414,7 +414,7 @@ const HomePage = () => {
       </div>
 
       {/* ================= FINAL CTA ================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-20 max-w-[120rem]">
         <Card className="gradient-primary p-12 text-center text-white shadow-large border-none">
           <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-primary-100 mb-8 max-w-xl mx-auto">Join thousands of customers and workers on India's most trusted local labor marketplace.</p>

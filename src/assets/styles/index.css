@@ -1,7 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+.max-w-7xl {
+  max-width: 120rem !important;
+}
 @layer base {
   body {
     @apply bg-surface-50 text-surface-800 font-sans antialiased;
@@ -18,4 +20,5 @@
   .gradient-primary {
     @apply bg-gradient-to-r from-primary-600 to-primary-500;
   }
+  
 }

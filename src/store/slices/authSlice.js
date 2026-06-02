@@ -2,20 +2,20 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '@/api/axiosInstance';
 
 const initialState = {
-  user: null,
+  // 1. Load user instantly from localStorage on refresh!
+  user: JSON.parse(localStorage.getItem('skillbridge_user')) || null,
   accessToken: localStorage.getItem('accessToken'),
   isAuthenticated: !!localStorage.getItem('accessToken'),
   loading: false,
   error: null,
 };
 
-// Async Thunks
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
-      return response.data.data; // { user, accessToken, refreshToken }
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
@@ -53,9 +53,10 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        
+        // 2. Save BOTH token and user to localStorage
         localStorage.setItem('accessToken', action.payload.accessToken);
-        // Also store basic user info for ProtectedRoute RBAC
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        localStorage.setItem('skillbridge_user', JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -68,8 +69,9 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        
         localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        localStorage.setItem('skillbridge_user', JSON.stringify(action.payload.user));
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -80,8 +82,10 @@ const authSlice = createSlice({
         state.user = null;
         state.accessToken = null;
         state.isAuthenticated = false;
+        
+        // 3. Clear BOTH from localStorage
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('skillbridge_user');
       });
   },
 });
