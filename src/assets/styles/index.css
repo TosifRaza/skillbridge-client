@@ -1,6 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Next-Gen Theme Variables */
+:root {
+  --bg-primary: #F8FAFC; /* surface-50 */
+  --bg-card: #FFFFFF;    /* white */
+  --text-primary: #0F172A; /* surface-900 */
+  --text-secondary: #64748B; /* surface-500 */
+  --border-color: #E2E8F0; /* surface-200 */
+}
+
+.dark {
+  --bg-primary: #0F172A; /* surface-900 */
+  --bg-card: #1E293B;   /* surface-800 */
+  --text-primary: #F8FAFC; /* surface-50 */
+  --text-secondary: #94A3B8; /* surface-400 */
+  --border-color: #334155; /* surface-700 */
+}
+
+/* Base dark mode transitions */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 .max-w-7xl {
   max-width: 120rem !important;
 }

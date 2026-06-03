@@ -305,3 +305,215 @@ const PublicLayout = () => {
 };
 
 export default PublicLayout;
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { useState } from 'react';
+// import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+// import { useAppSelector, useAppDispatch } from '@/store/hooks';
+// import { setCity } from '@/store/slices/locationSlice';
+// import { PHASE_1_SERVICES } from '@/constants/services';
+// import { CITIES } from '@/constants/locations';
+// import Button from '@/components/ui/Button';
+// import { HiOutlineLocationMarker, HiMenu, HiX, HiChevronDown } from 'react-icons/hi';
+
+// const PublicLayout = () => {
+//   const dispatch = useAppDispatch();
+//   const navigate = useNavigate();
+//   const { city } = useAppSelector((state) => state.location);
+  
+//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+//   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+
+//   const handleSearchSubmit = (e) => {
+//     e.preventDefault();
+//     // We will build this route in Sub-step B, but routing it now doesn't hurt
+//     navigate(`/services?q=${e.target.search.value}`);
+//   };
+
+//   return (
+//     <div className="min-h-screen flex flex-col bg-surface-50">
+//       {/* ================= STICKY NAVBAR ================= */}
+//       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-surface-200 shadow-soft">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+//           {/* Logo */}
+//           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+//             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
+//             <span className="text-xl font-bold text-surface-900">SkillBridge</span>
+//           </Link>
+
+//           {/* Desktop Nav Links */}
+//           <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-surface-600 relative">
+            
+//             {/* Mega Menu Trigger */}
+//             <div 
+//               className="relative h-full flex items-center" 
+//               onMouseEnter={() => setMegaMenuOpen(true)} 
+//               onMouseLeave={() => setMegaMenuOpen(false)}
+//             >
+//               <button className="hover:text-primary-600 transition font-semibold flex items-center gap-1 py-5">
+//                 Services <HiChevronDown className={`w-4 h-4 transition ${megaMenuOpen ? 'rotate-180' : ''}`} />
+//               </button>
+
+//               {/* Mega Dropdown */}
+//               {megaMenuOpen && (
+//                 <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[500px] bg-white rounded-xl shadow-large border border-surface-200 p-6 grid grid-cols-2 gap-4 animate-fade-in">
+//                   {PHASE_1_SERVICES.map((service) => (
+//                     <Link 
+//                       key={service.id} 
+//                       to={service.slug}
+//                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-50 transition group"
+//                       onClick={() => setMegaMenuOpen(false)}
+//                     >
+//                       <span className="text-3xl group-hover:scale-110 transition">{service.emoji}</span>
+//                       <div>
+//                         <p className="font-semibold text-surface-900 text-sm">{service.name}</p>
+//                         <p className="text-xs text-surface-400">From {service.startingPrice}</p>
+//                       </div>
+//                     </Link>
+//                   ))}
+//                   <div className="col-span-2 mt-2 pt-4 border-t border-surface-100 text-center">
+//                     <Link to="/services" onClick={() => setMegaMenuOpen(false)} className="text-primary-600 font-semibold text-sm hover:underline">
+//                       View All Services →
+//                     </Link>
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+
+//             <NavLink to="/become-provider" className={({isActive}) => `text-primary-600 hover:text-primary-700 transition font-semibold ${isActive ? 'underline' : ''}`}>
+//               Become a Provider
+//             </NavLink>
+//             <NavLink to="/how-it-works" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>How it Works</NavLink>
+//             <NavLink to="/safety" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>Safety</NavLink>
+//             <NavLink to="/pricing" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>Pricing</NavLink>
+//           </div>
+
+//           {/* Right Section */}
+//           <div className="flex items-center gap-3 flex-shrink-0">
+//             {/* City Selector */}
+//             <div className="hidden md:flex items-center gap-2 text-sm font-medium border border-surface-200 rounded-lg px-3 py-1.5 bg-white">
+//               <HiOutlineLocationMarker className="w-4 h-4 text-primary-500" />
+//               <select 
+//                 value={city} 
+//                 onChange={(e) => dispatch(setCity(e.target.value))}
+//                 className="bg-transparent focus:outline-none text-surface-700 font-medium cursor-pointer"
+//               >
+//                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+//               </select>
+//             </div>
+
+//             <Link to="/auth/login" className="hidden md:block">
+//               <Button variant="ghost" className="text-surface-700 hover:text-primary-600">Log In</Button>
+//             </Link>
+//             <Link to="/auth/register" className="hidden md:block">
+//               <Button>Sign Up</Button>
+//             </Link>
+
+//             {/* Mobile Hamburger */}
+//             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-surface-700">
+//               {mobileMenuOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Mobile Drawer Menu */}
+//         {mobileMenuOpen && (
+//           <div className="lg:hidden bg-white border-t border-surface-100 shadow-medium animate-fade-in max-h-[80vh] overflow-y-auto">
+//             <div className="p-4 space-y-2">
+//               <div className="flex items-center gap-2 mb-4 bg-surface-50 p-2 rounded-lg">
+//                 <HiOutlineLocationMarker className="text-primary-500" />
+//                 <select value={city} onChange={(e) => dispatch(setCity(e.target.value))} className="w-full bg-transparent focus:outline-none text-sm font-medium">
+//                   {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+//                 </select>
+//               </div>
+              
+//               <p className="text-xs text-surface-400 font-bold uppercase mt-4 mb-2">Top Services</p>
+//               {PHASE_1_SERVICES.map(service => (
+//                 <Link key={service.id} to={service.slug} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-50">
+//                   <span className="text-xl">{service.emoji}</span> <span className="font-medium text-surface-800">{service.name}</span>
+//                 </Link>
+//               ))}
+
+//               <div className="border-t border-surface-100 pt-2 mt-2 space-y-1">
+//                 <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-surface-800">All Services</Link>
+//                 <Link to="/become-provider" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-primary-600">Become a Provider</Link>
+//                 <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">How it Works</Link>
+//                 <Link to="/safety" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">Safety</Link>
+//                 <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">Pricing</Link>
+//               </div>
+
+//               <div className="flex gap-2 mt-4">
+//                 <Link to="/auth/login" className="flex-1"><Button variant="outline" className="w-full">Log In</Button></Link>
+//                 <Link to="/auth/register" className="flex-1"><Button className="w-full">Sign Up</Button></Link>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </nav>
+
+//       {/* ================= MAIN CONTENT ================= */}
+//       <main className="flex-grow">
+//         <Outlet />
+//       </main>
+
+//       {/* ================= PREMIUM FOOTER ================= */}
+//       <footer className="bg-surface-900 text-surface-400 pt-16 pb-8">
+//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="grid md:grid-cols-4 gap-8 mb-12">
+//             <div>
+//               <div className="flex items-center gap-2 mb-4">
+//                 <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
+//                 <span className="text-xl font-bold text-white">SkillBridge</span>
+//               </div>
+//               <p className="text-sm leading-relaxed">Every problem gets a solution, and every worker gets an opportunity. India's most trusted hybrid marketplace.</p>
+//             </div>
+//             <div>
+//               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Top Services</h4>
+//               <ul className="space-y-2 text-sm">
+//                 {PHASE_1_SERVICES.slice(0, 5).map(s => <li key={s.id}><Link to={s.slug} className="hover:text-white transition">{s.name}</Link></li>)}
+//               </ul>
+//             </div>
+//             <div>
+//               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Company</h4>
+//               <ul className="space-y-2 text-sm">
+//                 <li><Link to="/how-it-works" className="hover:text-white transition">How it Works</Link></li>
+//                 <li><Link to="/safety" className="hover:text-white transition">Safety & Trust</Link></li>
+//                 <li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li>
+//                 <li><Link to="/contact" className="hover:text-white transition">Contact Us</Link></li>
+//               </ul>
+//             </div>
+//             <div>
+//               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Workers</h4>
+//               <ul className="space-y-2 text-sm">
+//                 <li><Link to="/become-provider" className="hover:text-white transition">Become a Provider</Link></li>
+//                 <li><Link to="#" className="hover:text-white transition">Community</Link></li>
+//                 <li><Link to="#" className="hover:text-white transition">Help Center</Link></li>
+//               </ul>
+//             </div>
+//           </div>
+//           <div className="border-t border-surface-700 pt-8 flex flex-col md:flex-row justify-between items-center text-xs">
+//             <p>© {new Date().getFullYear()} SkillBridge. All rights reserved.</p>
+//             <div className="flex gap-4 mt-4 md:mt-0">
+//               <Link to="#" className="hover:text-white transition">Privacy Policy</Link>
+//               <Link to="#" className="hover:text-white transition">Terms of Service</Link>
+//             </div>
+//           </div>
+//         </div>
+//       </footer>
+//     </div>
+//   );
+// };
+
+// export default PublicLayout;

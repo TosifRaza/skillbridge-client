@@ -187,7 +187,6 @@
 //   },
 // ]);
 
-
 import { createBrowserRouter } from 'react-router-dom';
 import PublicLayout from '@/components/layout/PublicLayout';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -201,12 +200,13 @@ import BecomeProviderPage from '@/pages/public/BecomeProviderPage';
 import HowItWorksPage from '@/pages/public/HowItWorksPage';
 import SafetyPage from '@/pages/public/SafetyPage';
 import PricingPage from '@/pages/public/PricingPage';
+import ContactPage from '@/pages/public/ContactPage'; // NEW
 
 // Auth Pages
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 
-// Dashboard Pages
+// Dashboard Pages (Keeping these alive for Phase 2 transition)
 import Dashboard from '@/pages/dashboard/Dashboard';
 import PostJob from '@/pages/dashboard/PostJob';
 import MyJobs from '@/pages/dashboard/MyJobs';
@@ -223,11 +223,12 @@ export const appRouter = createBrowserRouter([
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/services', element: <ServicesPage /> },
-      { path: '/service/:slug', element: <ServiceDetailPage /> },
+      { path: '/services/:slug', element: <ServiceDetailPage /> }, // FIXED: Plural to match constants
       { path: '/become-provider', element: <BecomeProviderPage /> },
       { path: '/how-it-works', element: <HowItWorksPage /> },
       { path: '/safety', element: <SafetyPage /> },
       { path: '/pricing', element: <PricingPage /> },
+      { path: '/contact', element: <ContactPage /> }, // NEW
     ],
   },
 
@@ -244,7 +245,7 @@ export const appRouter = createBrowserRouter([
   },
 
   // ==========================================
-  // PROTECTED DASHBOARD ROUTES
+  // PROTECTED DASHBOARD ROUTES (Temporary until Phase 2)
   // ==========================================
   {
     element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,

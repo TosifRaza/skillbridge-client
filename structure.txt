@@ -1,0 +1,95 @@
+client
++-- public
+¦   +-- favicon.svg
+¦   +-- icons.svg
++-- src
+¦   +-- api
+¦   ¦   +-- axiosInstance.js
+¦   +-- assets
+¦   ¦   +-- styles
+¦   ¦   ¦   +-- index.css
+¦   +-- components
+¦   ¦   +-- layout
+¦   ¦   ¦   +-- AuthLayout.jsx
+¦   ¦   ¦   +-- DashboardLayout.jsx
+¦   ¦   ¦   +-- PublicLayout.jsx
+¦   ¦   +-- shared
+¦   ¦   ¦   +-- ApplicantCard.jsx
+¦   ¦   ¦   +-- ApplyModal.jsx
+¦   ¦   ¦   +-- JobCard.jsx
+¦   ¦   +-- ui
+¦   ¦   ¦   +-- Avatar.jsx
+¦   ¦   ¦   +-- Badge.jsx
+¦   ¦   ¦   +-- Button.jsx
+¦   ¦   ¦   +-- Card.jsx
+¦   ¦   ¦   +-- Input.jsx
+¦   ¦   ¦   +-- Select.jsx
+¦   ¦   ¦   +-- Spinner.jsx
+¦   +-- constants
+¦   ¦   +-- locations.js
+¦   ¦   +-- services.js
+¦   +-- features
+¦   ¦   +-- admin
+¦   ¦   +-- applications
+¦   ¦   +-- auth
+¦   ¦   +-- chat
+¦   ¦   +-- jobs
+¦   ¦   +-- profile
+¦   ¦   +-- reviews
+¦   +-- pages
+¦   ¦   +-- auth
+¦   ¦   ¦   +-- Login.jsx
+¦   ¦   ¦   +-- Register.jsx
+¦   ¦   +-- dashboard
+¦   ¦   ¦   +-- Chat.jsx
+¦   ¦   ¦   +-- Dashboard.jsx
+¦   ¦   ¦   +-- JobDetail.jsx
+¦   ¦   ¦   +-- MyJobs.jsx
+¦   ¦   ¦   +-- PostJob.jsx
+¦   ¦   ¦   +-- Profile.jsx
+¦   ¦   +-- public
+¦   ¦   ¦   +-- BecomeProviderPage.jsx
+¦   ¦   ¦   +-- HomePage.jsx
+¦   ¦   ¦   +-- HowItWorksPage.jsx
+¦   ¦   ¦   +-- PricingPage.jsx
+¦   ¦   ¦   +-- SafetyPage.jsx
+¦   ¦   ¦   +-- ServiceDetailPage.jsx
+¦   ¦   ¦   +-- ServicesPage.jsx
+¦   +-- routes
+¦   ¦   +-- AppRouter.jsx
+¦   ¦   +-- ProtectedRoute.jsx
+¦   +-- store
+¦   ¦   +-- slices
+¦   ¦   ¦   +-- applicationSlice.js
+¦   ¦   ¦   +-- authSlice.js
+¦   ¦   ¦   +-- chatSlice.js
+¦   ¦   ¦   +-- jobSlice.js
+¦   ¦   ¦   +-- locationSlice.js
+¦   ¦   ¦   +-- notificationSlice.js
+¦   ¦   ¦   +-- userSlice.js
+¦   ¦   +-- hooks.js
+¦   ¦   +-- index.js
+¦   +-- tests
+¦   ¦   +-- components
+¦   ¦   ¦   +-- ui
+¦   ¦   ¦   ¦   +-- Button.test.jsx
+¦   ¦   +-- pages
+¦   ¦   ¦   +-- LoginPage.test.jsx
+¦   ¦   +-- store
+¦   ¦   ¦   +-- authSlice.test.js
+¦   ¦   +-- setup.js
+¦   +-- utils
+¦   ¦   +-- constants.js
+¦   +-- App.jsx
+¦   +-- main.jsx
++-- .env
++-- .gitignore
++-- eslint.config.js
++-- index.html
++-- package.json
++-- package-lock.json
++-- postcss.config.js
++-- README.md
++-- structure.txt
++-- tailwind.config.js
++-- vite.config.js

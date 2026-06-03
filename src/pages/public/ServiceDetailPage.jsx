@@ -7,18 +7,10 @@ import { HiOutlineShieldCheck, HiOutlineClock, HiOutlineCurrencyDollar } from 'r
 
 const ServiceDetailPage = () => {
   const { slug } = useParams();
-  const service = PHASE_1_SERVICES.find(s => s.slug === `/service/${slug}`);
+  const service = PHASE_1_SERVICES.find(s => s.slug === `/services/${slug}`);
 
-  // If someone tries to access a non-Phase 1 service, redirect them
+  // Redirect if service doesn't exist
   if (!service) return <Navigate to="/services" replace />;
-
-  const popularTasks = {
-    'house-cleaning': ['Deep Home Cleaning', 'Kitchen & Bathroom Scrubbing', 'Move-in/Move-out Cleaning', 'Sofa & Carpet Vacuuming'],
-    'moving-help': ['Packing & Unpacking', 'Loading & Unloading Truck', 'Furniture Rearrangement', 'Office Relocation Help'],
-    'gardening': ['Lawn Mowing', 'Weed Removal', 'Tree Trimming', 'Seasonal Yard Cleanup'],
-    'event-staffing': ['Party Setup & Decor', 'Waiters & Servers', 'Cleanup Crews', 'Bartending Assistance'],
-    'general-labor': ['Garage Organization', 'Junk Removal', 'Assembly (Furniture/Appliances)', 'Warehouse Labor'],
-  };
 
   return (
     <div className="min-h-screen py-16 bg-surface-50">
@@ -30,6 +22,7 @@ const ServiceDetailPage = () => {
           <h1 className="text-4xl lg:text-5xl font-extrabold text-surface-900 mb-4 relative z-10">{service.name}</h1>
           <p className="text-lg text-surface-500 max-w-2xl mx-auto mb-8 relative z-10">{service.shortDesc}</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+            {/* Updated link to safely route to dashboard, ProtectedRoute will handle auth redirect if needed */}
             <Link to="/dashboard/post-job"><Button size="lg" className="shadow-glow">Book Service</Button></Link>
             <Link to="/become-provider"><Button variant="outline" size="lg">Become a Provider</Button></Link>
           </div>
@@ -42,7 +35,8 @@ const ServiceDetailPage = () => {
           <Card className="p-8">
             <h2 className="text-2xl font-bold text-surface-900 mb-6">Popular Tasks</h2>
             <ul className="space-y-4">
-              {popularTasks[service.id]?.map((task, idx) => (
+              {/* Dynamically loading tasks from constants */}
+              {service.popularTasks?.map((task, idx) => (
                 <li key={idx} className="flex items-center gap-3 text-surface-700">
                   <span className="w-6 h-6 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center font-bold text-xs">{idx + 1}</span>
                   {task}
