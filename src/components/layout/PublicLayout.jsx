@@ -144,6 +144,7 @@ import { setCity } from '@/store/slices/locationSlice';
 import { PHASE_1_SERVICES } from '@/constants/services';
 import { CITIES } from '@/constants/locations';
 import Button from '@/components/ui/Button';
+import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { HiOutlineLocationMarker, HiMenu, HiX } from 'react-icons/hi';
 
 const PublicLayout = () => {
@@ -153,19 +154,19 @@ const PublicLayout = () => {
   const [servicesOpen, setServicesOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-50">
+    <div className="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-900 transition-colors duration-300">
       {/* Sticky Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-surface-200 shadow-soft">
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-surface-900/95 backdrop-blur-lg border-b border-surface-200 dark:border-surface-700 shadow-soft transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-            <span className="text-xl font-bold text-surface-900">SkillBridge</span>
+            <span className="text-xl font-bold text-surface-900 dark:text-white">SkillBridge</span>
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-surface-600 relative">
+          <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-surface-600 dark:text-surface-300 relative">
             
             {/* Find Services - Mega Dropdown Trigger */}
             <div 
@@ -173,24 +174,24 @@ const PublicLayout = () => {
               onMouseEnter={() => setServicesOpen(true)} 
               onMouseLeave={() => setServicesOpen(false)}
             >
-              <button className="hover:text-primary-600 transition font-semibold py-5">
+              <button className="hover:text-primary-600 dark:hover:text-primary-400 transition font-semibold py-5">
                 Find Services
               </button>
 
               {/* Mega Dropdown */}
               {servicesOpen && (
-                <div className="absolute top-16 left-0 w-64 bg-white rounded-xl shadow-large border border-surface-200 py-2 animate-fade-in">
+                <div className="absolute top-16 left-0 w-64 bg-white dark:bg-surface-800 rounded-xl shadow-large border border-surface-200 dark:border-surface-700 py-2 animate-fade-in">
                   {PHASE_1_SERVICES.map((service) => (
                     <Link 
                       key={service.id} 
                       to={service.slug}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-surface-50 transition"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-surface-50 dark:hover:bg-surface-700 transition"
                       onClick={() => setServicesOpen(false)}
                     >
                       <span className="text-2xl">{service.emoji}</span>
                       <div>
-                        <p className="font-semibold text-surface-900 text-sm">{service.name}</p>
-                        <p className="text-xs text-surface-400">From {service.startingPrice}</p>
+                        <p className="font-semibold text-surface-900 dark:text-white text-sm">{service.name}</p>
+                        <p className="text-xs text-surface-400 dark:text-surface-500">From {service.startingPrice}</p>
                       </div>
                     </Link>
                   ))}
@@ -198,37 +199,40 @@ const PublicLayout = () => {
               )}
             </div>
 
-            <Link to="/become-provider" className="text-primary-600 hover:text-primary-700 transition font-semibold">
+            <Link to="/become-provider" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition font-semibold">
               Become a Provider
             </Link>
-            <NavLink to="/how-it-works" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>How it Works</NavLink>
-            <NavLink to="/safety" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>Safety & Trust</NavLink>
-            <NavLink to="/pricing" className={({isActive}) => isActive ? "text-primary-600 font-semibold" : "hover:text-primary-600 transition"}>Pricing</NavLink>
+            <NavLink to="/how-it-works" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>How it Works</NavLink>
+            <NavLink to="/safety" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>Safety & Trust</NavLink>
+            <NavLink to="/pricing" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>Pricing</NavLink>
           </div>
 
-          {/* Right Section: Location & Auth */}
+          {/* Right Section: Location, Dark Mode & Auth */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* City Selector */}
-            <div className="hidden md:flex items-center gap-2 text-sm font-medium border border-surface-200 rounded-lg px-3 py-1.5">
+            <div className="hidden md:flex items-center gap-2 text-sm font-medium border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-1.5 bg-white dark:bg-surface-800">
               <HiOutlineLocationMarker className="w-4 h-4 text-primary-500" />
               <select 
                 value={city} 
                 onChange={(e) => dispatch(setCity(e.target.value))}
-                className="bg-transparent focus:outline-none text-surface-700 font-medium cursor-pointer"
+                className="bg-transparent focus:outline-none text-surface-700 dark:text-surface-300 font-medium cursor-pointer"
               >
                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+            
+            {/* Dark Mode Toggle */}
+            <DarkModeToggle />
 
             <Link to="/auth/login" className="hidden md:block">
-              <Button variant="ghost" className="text-surface-700 hover:text-primary-600">Log In</Button>
+              <Button variant="ghost" className="text-surface-700 dark:text-surface-300 hover:text-primary-600">Log In</Button>
             </Link>
             <Link to="/auth/register" className="hidden md:block">
               <Button>Sign Up</Button>
             </Link>
 
             {/* Mobile Hamburger */}
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-surface-700">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-surface-700 dark:text-surface-300">
               {mobileMenuOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
             </button>
           </div>
@@ -236,28 +240,34 @@ const PublicLayout = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-surface-100 shadow-medium animate-fade-in">
+          <div className="lg:hidden bg-white dark:bg-surface-900 border-t border-surface-100 dark:border-surface-700 shadow-medium animate-fade-in">
             <div className="p-4 space-y-2">
               <select 
                 value={city} 
                 onChange={(e) => dispatch(setCity(e.target.value))}
-                className="w-full bg-surface-50 border border-surface-200 rounded-lg p-2 mb-4"
+                className="w-full bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-300 rounded-lg p-2 mb-4"
               >
                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               
-              <p className="text-xs text-surface-400 font-bold uppercase mt-4 mb-2">Services</p>
+              <p className="text-xs text-surface-400 dark:text-surface-500 font-bold uppercase mt-4 mb-2">Services</p>
               {PHASE_1_SERVICES.map(service => (
-                <Link key={service.id} to={service.slug} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-50">
-                  <span>{service.emoji}</span> <span className="font-medium text-surface-800">{service.name}</span>
+                <Link key={service.id} to={service.slug} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 text-surface-800 dark:text-surface-200">
+                  <span>{service.emoji}</span> <span className="font-medium">{service.name}</span>
                 </Link>
               ))}
 
-              <div className="border-t border-surface-100 pt-2 mt-2 space-y-2">
-                <Link to="/become-provider" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-primary-600">Become a Provider</Link>
-                <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">How it Works</Link>
-                <Link to="/safety" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">Safety & Trust</Link>
-                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700">Pricing</Link>
+              <div className="border-t border-surface-100 dark:border-surface-700 pt-2 mt-2 space-y-2">
+                <Link to="/become-provider" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-primary-600 dark:text-primary-400">Become a Provider</Link>
+                <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">How it Works</Link>
+                <Link to="/safety" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Safety & Trust</Link>
+                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Pricing</Link>
+              </div>
+
+              {/* Mobile Appearance Toggle */}
+              <div className="flex items-center justify-between mt-4 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg">
+                <span className="text-sm font-medium text-surface-700 dark:text-surface-300">Appearance</span>
+                <DarkModeToggle />
               </div>
 
               <div className="flex gap-2 mt-4">
@@ -275,7 +285,7 @@ const PublicLayout = () => {
       </main>
 
       {/* Professional Footer */}
-      <footer className="bg-surface-900 text-surface-400 py-12">
+      <footer className="bg-surface-900 dark:bg-black text-surface-400 py-12 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -305,9 +315,6 @@ const PublicLayout = () => {
 };
 
 export default PublicLayout;
-
-
-
 
 
 

@@ -1,14 +1,28 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '@/api/axiosInstance';
 
-const initialState = {
-  // 1. Load user instantly from localStorage on refresh!
-  user: JSON.parse(localStorage.getItem('skillbridge_user')) || null,
-  accessToken: localStorage.getItem('accessToken'),
-  isAuthenticated: !!localStorage.getItem('accessToken'),
-  loading: false,
-  error: null,
+// Load initial auth state from localStorage safely
+const loadAuthState = () => {
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    const user = localStorage.getItem('skillbridge_user');
+    if (accessToken && user) {
+      return {
+        user: JSON.parse(user),
+        accessToken,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      };
+    }
+  } catch (e) {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('skillbridge_user');
+  }
+  return { user: null, accessToken: null, isAuthenticated: false, loading: false, error: null };
 };
+
+const initialState = loadAuthState();
 
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -37,16 +51,28 @@ export const registerUser = createAsyncThunk(
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   await axiosInstance.post('/auth/logout');
 });
+// export const { clearAuthError, updateLocalUser } = authSlice.actions;
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     clearAuthError: (state) => { state.error = null; },
+    // Add this reducer to update the user in real-time after profile edits
+  // updateLocalUser: (state, action) => {
+  //   state.user = action.payload;
+  //   localStorage.setItem('skillbridge_user', JSON.stringify(action.payload));
+  // },
+   // Add this reducer to update the user in real-time after profile edits
+  updateLocalUser: (state, action) => {
+    // Merge the updated fields into the existing user state
+    state.user = { ...state.user, ...action.payload };
+    // Update localStorage so it persists on refresh
+    localStorage.setItem('skillbridge_user', JSON.stringify(state.user));
+  },
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -54,7 +80,6 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
         
-        // 2. Save BOTH token and user to localStorage
         localStorage.setItem('accessToken', action.payload.accessToken);
         localStorage.setItem('skillbridge_user', JSON.stringify(action.payload.user));
       })
@@ -62,7 +87,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Register
       .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -77,18 +101,19 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;
         state.isAuthenticated = false;
+        state.loading = false;
+        state.error = null;
         
-        // 3. Clear BOTH from localStorage
         localStorage.removeItem('accessToken');
         localStorage.removeItem('skillbridge_user');
       });
   },
 });
 
-export const { clearAuthError } = authSlice.actions;
+// export const { clearAuthError } = authSlice.actions;
+export const { clearAuthError, updateLocalUser } = authSlice.actions;
 export default authSlice.reducer;

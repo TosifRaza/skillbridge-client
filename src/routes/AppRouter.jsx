@@ -1,129 +1,290 @@
-// // import { createBrowserRouter } from 'react-router-dom';
-// // import PublicLayout from '@/components/layout/PublicLayout';
-// // import AuthLayout from '@/components/layout/AuthLayout';
-// // import DashboardLayout from '@/components/layout/DashboardLayout';
-// // import ProtectedRoute from '@/routes/ProtectedRoute';
-
-// // // Placeholder pages (Will be built out in later steps)
-// // const LandingPage = () => <div className="p-8 text-2xl font-bold">Welcome to SkillBridge Landing Page</div>;
-// // const LoginPage = () => <div>Login Form Goes Here</div>;
-// // const RegisterPage = () => <div>Register Form Goes Here</div>;
-// // const CustomerDashboard = () => <div>Customer Dashboard Content</div>;
-
-// // export const appRouter = createBrowserRouter([
-// //   {
-// //     element: <PublicLayout />,
-// //     children: [
-// //       { path: '/', element: <LandingPage /> },
-// //     ],
-// //   },
-// //   {
-// //     element: <AuthLayout />,
-// //     children: [
-// //       { path: '/login', element: <LoginPage /> },
-// //       { path: '/register', element: <RegisterPage /> },
-// //     ],
-// //   },
-// //   {
-// //     element: (
-// //       <ProtectedRoute>
-// //         <DashboardLayout />
-// //       </ProtectedRoute>
-// //     ),
-// //     children: [
-// //       { path: '/dashboard', element: <CustomerDashboard /> },
-// //     ],
-// //   },
-// // ]);
-
-
-// import { createBrowserRouter } from 'react-router-dom';
+// import { createBrowserRouter, Navigate } from 'react-router-dom';
 // import PublicLayout from '@/components/layout/PublicLayout';
-// import AuthLayout from '@/components/layout/AuthLayout';
-// import DashboardLayout from '@/components/layout/DashboardLayout';
+// import CustomerLayout from '@/components/layout/CustomerLayout';
+// import WorkerLayout from '@/components/layout/WorkerLayout';
+// import DashboardLayout from '@/components/layout/DashboardLayout'; // Fallback for Admin temporarily
+
+// // Route Guards
 // import ProtectedRoute from '@/routes/ProtectedRoute';
+// import CustomerRoute from '@/routes/CustomerRoute';
+// import WorkerRoute from '@/routes/WorkerRoute';
+// import AdminRoute from '@/routes/AdminRoute';
 
-// // Import the real pages
-// import Login from '@/pages/Login';
-// import Register from '@/pages/Register';
-// import Dashboard from '@/pages/Dashboard';
+// // Public Marketing Pages
+// import HomePage from '@/pages/public/HomePage';
+// import ServicesPage from '@/pages/public/ServicesPage';
+// import ServiceDetailPage from '@/pages/public/ServiceDetailPage';
+// import BecomeProviderPage from '@/pages/public/BecomeProviderPage';
+// import HowItWorksPage from '@/pages/public/HowItWorksPage';
+// import SafetyPage from '@/pages/public/SafetyPage';
+// import PricingPage from '@/pages/public/PricingPage';
+// import ContactPage from '@/pages/public/ContactPage';
 
-// const LandingPage = () => <div className="p-8 text-center"><h1 className="text-4xl font-bold text-primary-600 mb-4">Every problem gets a solution.</h1><p className="text-xl text-slate-600">The marketplace for local labor, home services, and digital freelancing.</p></div>;
+// // Auth Pages
+// import Login from '@/pages/auth/Login';
+// import Register from '@/pages/auth/Register';
+
+// // Portal Home Pages
+// import CustomerHome from '@/pages/customer/CustomerHome';
+// import WorkerHome from '@/pages/worker/WorkerHome';
+
+// // Temporarily importing old Dashboard pages until we build out all Portal pages in Phase 3/4
+// import Dashboard from '@/pages/dashboard/Dashboard';
+// import PostJob from '@/pages/dashboard/PostJob';
+// import MyJobs from '@/pages/dashboard/MyJobs';
+// import JobDetail from '@/pages/dashboard/JobDetail';
+// import Chat from '@/pages/dashboard/Chat';
+// import Profile from '@/pages/dashboard/Profile';
+
+
+
+// import CustomerServices from '@/pages/customer/CustomerServices';
+// import WorkerProfile from '@/pages/customer/WorkerProfile';
+// import MyJobs from '@/pages/customer/MyJobs';
+// import JobDetail from '@/pages/customer/JobDetail';
+// import CustomerProfile from '@/pages/customer/CustomerProfile';
 
 // export const appRouter = createBrowserRouter([
+//   // ==========================================
+//   // PUBLIC MARKETING ROUTES
+//   // ==========================================
 //   {
 //     element: <PublicLayout />,
 //     children: [
-//       { path: '/', element: <LandingPage /> },
+//       { path: '/', element: <HomePage /> },
+//       { path: '/services', element: <ServicesPage /> },
+//       { path: '/services/:slug', element: <ServiceDetailPage /> },
+//       { path: '/become-provider', element: <BecomeProviderPage /> },
+//       { path: '/how-it-works', element: <HowItWorksPage /> },
+//       { path: '/safety', element: <SafetyPage /> },
+//       { path: '/pricing', element: <PricingPage /> },
+//       { path: '/contact', element: <ContactPage /> },
 //     ],
 //   },
+
+//   // ==========================================
+//   // AUTH ROUTES (Dark mode wrappers added)
+//   // ==========================================
 //   {
-//     element: <AuthLayout />,
-//     children: [
-//       { path: '/login', element: <Login /> },
-//       { path: '/register', element: <Register /> },
-//     ],
+//     path: '/auth/login',
+//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Login /></div></div>,
 //   },
 //   {
-//     element: (
-//       <ProtectedRoute>
-//         <DashboardLayout />
-//       </ProtectedRoute>
-//     ),
+//     path: '/auth/register',
+//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Register /></div></div>,
+//   },
+
+//   // ==========================================
+//   // CUSTOMER PORTAL ROUTES
+//   // ==========================================
+//   {
+//     element: <CustomerRoute><CustomerLayout /></CustomerRoute>,
 //     children: [
-//       { path: '/dashboard', element: <Dashboard /> },
+//       { path: '/customer/home', element: <CustomerHome /> },
+//       { path: '/customer/jobs', element: <MyJobs /> },
+//       { path: '/customer/jobs/post', element: <PostJob /> },
+//       { path: '/customer/jobs/:id', element: <JobDetail /> },
+//       { path: '/customer/chat', element: <Chat /> },
+//       { path: '/customer/profile', element: <Profile /> },
 //     ],
+//   },
+
+//   // Update Customer Portal children:
+//   {
+//     element: <CustomerRoute><CustomerLayout /></CustomerRoute>,
+//     children: [
+//       { path: '/customer/home', element: <CustomerHome /> },
+//       { path: '/customer/services', element: <CustomerServices /> },
+//       { path: '/customer/worker/:id', element: <WorkerProfile /> },
+//       { path: '/customer/jobs', element: <MyJobs /> },
+//       { path: '/customer/jobs/post', element: <PostJob /> },
+//       { path: '/customer/jobs/:id', element: <JobDetail /> },
+//       { path: '/customer/profile', element: <CustomerProfile /> },
+//     ],
+//   },
+//   // ==========================================
+//   // WORKER PORTAL ROUTES
+//   // ==========================================
+//   {
+//     element: <WorkerRoute><WorkerLayout /></WorkerRoute>,
+//     children: [
+//       { path: '/worker/home', element: <WorkerHome /> },
+//       { path: '/worker/jobs', element: <MyJobs /> },
+//       { path: '/worker/jobs/:id', element: <JobDetail /> },
+//       { path: '/worker/chat', element: <Chat /> },
+//       { path: '/worker/profile', element: <Profile /> },
+//     ],
+//   },
+
+//   // ==========================================
+//   // ADMIN PORTAL ROUTES (Using old layout temporarily)
+//   // ==========================================
+//   {
+//     element: <AdminRoute><DashboardLayout /></AdminRoute>,
+//     children: [
+//       { path: '/admin', element: <Dashboard /> },
+//     ],
+//   },
+
+//   // ==========================================
+//   // FALLBACK / REDIRECTS
+//   // ==========================================
+//   {
+//     // Old dashboard routes redirect to new customer routes to prevent 404s
+//     path: '/dashboard',
+//     element: <Navigate to="/customer/home" replace />,
+//   },
+//   {
+//     path: '/dashboard/jobs',
+//     element: <Navigate to="/customer/jobs" replace />,
+//   },
+//   {
+//     path: '*',
+//     element: <Navigate to="/" replace />,
 //   },
 // ]);
 
 
 
-// import { createBrowserRouter } from 'react-router-dom';
 
+
+
+
+
+
+
+
+
+// import { createBrowserRouter, Navigate } from 'react-router-dom';
 // import PublicLayout from '@/components/layout/PublicLayout';
-// import AuthLayout from '@/components/layout/AuthLayout';
-// import DashboardLayout from '@/components/layout/DashboardLayout';
-// import ProtectedRoute from '@/routes/ProtectedRoute';
+// import CustomerLayout from '@/components/layout/CustomerLayout';
+// import WorkerLayout from '@/components/layout/WorkerLayout';
+// import DashboardLayout from '@/components/layout/DashboardLayout'; // Temp for Admin
 
-// // Pages
-// import LandingPage from '@/pages/LandingPage';
-// import Login from '@/pages/Login';
-// import Register from '@/pages/Register';
-// import Dashboard from '@/pages/Dashboard';
-// import MyJobs from '../pages/MyJobs';
-// import Chat from '../pages/Chat';
-// import Profile from '../pages/Profile';
-// import PostJob from '../pages/PostJob';
+// // Route Guards
+// import ProtectedRoute from '@/routes/ProtectedRoute';
+// import CustomerRoute from '@/routes/CustomerRoute';
+// import WorkerRoute from '@/routes/WorkerRoute';
+// import AdminRoute from '@/routes/AdminRoute';
+
+// // Public Marketing Pages
+// import HomePage from '@/pages/public/HomePage';
+// import ServicesPage from '@/pages/public/ServicesPage';
+// import ServiceDetailPage from '@/pages/public/ServiceDetailPage';
+// import BecomeProviderPage from '@/pages/public/BecomeProviderPage';
+// import HowItWorksPage from '@/pages/public/HowItWorksPage';
+// import SafetyPage from '@/pages/public/SafetyPage';
+// import PricingPage from '@/pages/public/PricingPage';
+// import ContactPage from '@/pages/public/ContactPage';
+
+// // Auth Pages
+// import Login from '@/pages/auth/Login';
+// import Register from '@/pages/auth/Register';
+
+// // ==========================================
+// // CUSTOMER PORTAL PAGES (New Structure)
+// // ==========================================
+// import CustomerHome from '@/pages/customer/CustomerHome';
+// import CustomerServices from '@/pages/customer/CustomerServices';
+// import WorkerProfile from '@/pages/customer/WorkerProfile';
+// import CustomerMyJobs from '@/pages/customer/MyJobs';
+// import CustomerJobDetail from '@/pages/customer/JobDetail';
+// import CustomerProfile from '@/pages/customer/CustomerProfile';
+// import PostJob from '@/pages/dashboard/PostJob'; // Keeping here temporarily, will move later
+
+// // ==========================================
+// // WORKER PORTAL PAGES (Old Structure - Temp)
+// // ==========================================
+// import Dashboard from '@/pages/dashboard/Dashboard';
+// import MyJobs from '@/pages/dashboard/MyJobs';
+// import JobDetail from '@/pages/dashboard/JobDetail';
+// import Chat from '@/pages/dashboard/Chat';
+// import Profile from '@/pages/dashboard/Profile';
 
 // export const appRouter = createBrowserRouter([
+//   // ==========================================
+//   // PUBLIC MARKETING ROUTES
+//   // ==========================================
 //   {
 //     element: <PublicLayout />,
 //     children: [
-//       { path: '/', element: <LandingPage /> },
+//       { path: '/', element: <HomePage /> },
+//       { path: '/services', element: <ServicesPage /> },
+//       { path: '/services/:slug', element: <ServiceDetailPage /> },
+//       { path: '/become-provider', element: <BecomeProviderPage /> },
+//       { path: '/how-it-works', element: <HowItWorksPage /> },
+//       { path: '/safety', element: <SafetyPage /> },
+//       { path: '/pricing', element: <PricingPage /> },
+//       { path: '/contact', element: <ContactPage /> },
 //     ],
 //   },
 
+//   // ==========================================
+//   // AUTH ROUTES
+//   // ==========================================
 //   {
-//     element: <AuthLayout />,
+//     path: '/auth/login',
+//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Login /></div></div>,
+//   },
+//   {
+//     path: '/auth/register',
+//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Register /></div></div>,
+//   },
+
+//   // ==========================================
+//   // CUSTOMER PORTAL ROUTES (Using New Files)
+//   // ==========================================
+//   {
+//     element: <CustomerRoute><CustomerLayout /></CustomerRoute>,
 //     children: [
-//       { path: '/login', element: <Login /> },
-//       { path: '/register', element: <Register /> },
+//       { path: '/customer/home', element: <CustomerHome /> },
+//       { path: '/customer/services', element: <CustomerServices /> },
+//       { path: '/customer/worker/:id', element: <WorkerProfile /> },
+//       { path: '/customer/jobs', element: <CustomerMyJobs /> },
+//       { path: '/customer/jobs/post', element: <PostJob /> },
+//       { path: '/customer/jobs/:id', element: <CustomerJobDetail /> },
+//       { path: '/customer/profile', element: <CustomerProfile /> },
 //     ],
 //   },
 
+//   // ==========================================
+//   // WORKER PORTAL ROUTES (Using Old Files Temp)
+//   // ==========================================
 //   {
-//     element: (
-//       <ProtectedRoute>
-//         <DashboardLayout />
-//       </ProtectedRoute>
-//     ),
+//     element: <WorkerRoute><WorkerLayout /></WorkerRoute>,
 //     children: [
-//       { path: '/dashboard', element: <Dashboard /> },
-//       { path: '/dashboard/jobs', element: <MyJobs /> },      // <-- ADDED
-//       { path: '/dashboard/chat', element: <Chat /> },         // <-- ADDED
-//       { path: '/dashboard/profile', element: <Profile /> },   // <-- ADDED
-//        { path: '/dashboard/post-job', element: <PostJob /> },
+//       { path: '/worker/home', element: <Dashboard /> },
+//       { path: '/worker/jobs', element: <MyJobs /> },
+//       { path: '/worker/jobs/:id', element: <JobDetail /> },
+//       { path: '/worker/chat', element: <Chat /> },
+//       { path: '/worker/profile', element: <Profile /> },
 //     ],
+//   },
+
+//   // ==========================================
+//   // ADMIN PORTAL ROUTES (Temp)
+//   // ==========================================
+//   {
+//     element: <AdminRoute><DashboardLayout /></AdminRoute>,
+//     children: [
+//       { path: '/admin', element: <Dashboard /> },
+//     ],
+//   },
+
+//   // ==========================================
+//   // FALLBACK / REDIRECTS
+//   // ==========================================
+//   {
+//     path: '/dashboard',
+//     element: <Navigate to="/customer/home" replace />,
+//   },
+//   {
+//     path: '/dashboard/jobs',
+//     element: <Navigate to="/customer/jobs" replace />,
+//   },
+//   {
+//     path: '*',
+//     element: <Navigate to="/" replace />,
 //   },
 // ]);
 
@@ -132,65 +293,21 @@
 
 
 
-// import { createBrowserRouter } from 'react-router-dom';
-// import PublicLayout from '@/components/layout/PublicLayout';
-// import DashboardLayout from '@/components/layout/DashboardLayout';
-// import ProtectedRoute from '@/routes/ProtectedRoute';
 
-// // Public & Auth Pages
-// import LandingPage from '@/pages/LandingPage';
-// import Login from '@/pages/Login';
-// import Register from '@/pages/Register';
 
-// // Dashboard Pages
-// import Dashboard from '@/pages/Dashboard';
-// import PostJob from '@/pages/PostJob';
-// import MyJobs from '@/pages/MyJobs';
-// import JobDetail from '@/pages/JobDetail'; // Important for Phase 4!
-// import Chat from '@/pages/Chat';
-// import Profile from '@/pages/Profile';
 
-// export const appRouter = createBrowserRouter([
-//   // Public Routes
-//   {
-//     element: <PublicLayout />,
-//     children: [
-//       { path: '/', element: <LandingPage /> },
-//     ],
-//   },
-  
-//   // Auth Routes
-//   {
-//     path: '/login',
-//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50"><div className="glass-card p-8 w-full max-w-md"><Login /></div></div>,
-//   },
-//   {
-//     path: '/register',
-//     element: <div className="min-h-screen flex items-center justify-center bg-surface-50"><div className="glass-card p-8 w-full max-w-md"><Register /></div></div>,
-//   },
 
-//   // Protected Dashboard Routes
-//   {
-//     element: (
-//       <ProtectedRoute>
-//         <DashboardLayout />
-//       </ProtectedRoute>
-//     ),
-//     children: [
-//       { path: '/dashboard', element: <Dashboard /> },
-//       { path: '/dashboard/post-job', element: <PostJob /> }, // <-- ENSURE THIS EXISTS
-//       { path: '/dashboard/jobs', element: <MyJobs /> },
-//       { path: '/dashboard/jobs/:id', element: <JobDetail /> }, // <-- ENSURE THIS EXISTS
-//       { path: '/dashboard/chat', element: <Chat /> },
-//       { path: '/dashboard/profile', element: <Profile /> },
-//     ],
-//   },
-// ]);
-
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import PublicLayout from '@/components/layout/PublicLayout';
+import CustomerLayout from '@/components/layout/CustomerLayout';
+import WorkerLayout from '@/components/layout/WorkerLayout';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+
+// Route Guards
 import ProtectedRoute from '@/routes/ProtectedRoute';
+import CustomerRoute from '@/routes/CustomerRoute';
+import WorkerRoute from '@/routes/WorkerRoute';
+import AdminRoute from '@/routes/AdminRoute';
 
 // Public Marketing Pages
 import HomePage from '@/pages/public/HomePage';
@@ -200,15 +317,23 @@ import BecomeProviderPage from '@/pages/public/BecomeProviderPage';
 import HowItWorksPage from '@/pages/public/HowItWorksPage';
 import SafetyPage from '@/pages/public/SafetyPage';
 import PricingPage from '@/pages/public/PricingPage';
-import ContactPage from '@/pages/public/ContactPage'; // NEW
+import ContactPage from '@/pages/public/ContactPage';
 
 // Auth Pages
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 
-// Dashboard Pages (Keeping these alive for Phase 2 transition)
-import Dashboard from '@/pages/dashboard/Dashboard';
+// Customer Portal Pages
+import CustomerHome from '@/pages/customer/CustomerHome';
+import CustomerServices from '@/pages/customer/CustomerServices';
+import WorkerProfile from '@/pages/customer/WorkerProfile';
+import CustomerMyJobs from '@/pages/customer/MyJobs';
+import CustomerJobDetail from '@/pages/customer/JobDetail';
+import CustomerProfile from '@/pages/customer/CustomerProfile';
 import PostJob from '@/pages/dashboard/PostJob';
+
+// Worker Portal Pages
+import Dashboard from '@/pages/dashboard/Dashboard';
 import MyJobs from '@/pages/dashboard/MyJobs';
 import JobDetail from '@/pages/dashboard/JobDetail';
 import Chat from '@/pages/dashboard/Chat';
@@ -223,12 +348,12 @@ export const appRouter = createBrowserRouter([
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/services', element: <ServicesPage /> },
-      { path: '/services/:slug', element: <ServiceDetailPage /> }, // FIXED: Plural to match constants
+      { path: '/services/:slug', element: <ServiceDetailPage /> },
       { path: '/become-provider', element: <BecomeProviderPage /> },
       { path: '/how-it-works', element: <HowItWorksPage /> },
       { path: '/safety', element: <SafetyPage /> },
       { path: '/pricing', element: <PricingPage /> },
-      { path: '/contact', element: <ContactPage /> }, // NEW
+      { path: '/contact', element: <ContactPage /> },
     ],
   },
 
@@ -237,25 +362,67 @@ export const appRouter = createBrowserRouter([
   // ==========================================
   {
     path: '/auth/login',
-    element: <div className="min-h-screen flex items-center justify-center bg-surface-50"><div className="glass-card p-8 w-full max-w-md"><Login /></div></div>,
+    element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Login /></div></div>,
   },
   {
     path: '/auth/register',
-    element: <div className="min-h-screen flex items-center justify-center bg-surface-50"><div className="glass-card p-8 w-full max-w-md"><Register /></div></div>,
+    element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900 transition-colors"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Register /></div></div>,
   },
 
   // ==========================================
-  // PROTECTED DASHBOARD ROUTES (Temporary until Phase 2)
+  // CUSTOMER PORTAL ROUTES
   // ==========================================
   {
-    element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+    element: <CustomerRoute><CustomerLayout /></CustomerRoute>,
     children: [
-      { path: '/dashboard', element: <Dashboard /> },
-      { path: '/dashboard/post-job', element: <PostJob /> },
-      { path: '/dashboard/jobs', element: <MyJobs /> },
-      { path: '/dashboard/jobs/:id', element: <JobDetail /> },
-      { path: '/dashboard/chat', element: <Chat /> },
-      { path: '/dashboard/profile', element: <Profile /> },
+      { path: '/customer/home', element: <CustomerHome /> },
+      { path: '/customer/services', element: <CustomerServices /> },
+      { path: '/customer/worker/:id', element: <WorkerProfile /> },
+      { path: '/customer/jobs', element: <CustomerMyJobs /> },
+      { path: '/customer/jobs/post', element: <PostJob /> },
+      { path: '/customer/jobs/:id', element: <CustomerJobDetail /> },
+      { path: '/customer/profile', element: <CustomerProfile /> },
+      { path: '/customer/chat', element: <Chat /> },
     ],
+  },
+
+  // ==========================================
+  // WORKER PORTAL ROUTES
+  // ==========================================
+  {
+    element: <WorkerRoute><WorkerLayout /></WorkerRoute>,
+    children: [
+      { path: '/worker/home', element: <Dashboard /> },
+      { path: '/worker/jobs', element: <MyJobs /> },
+      { path: '/worker/jobs/:id', element: <JobDetail /> },
+      { path: '/worker/chat', element: <Chat /> },
+      { path: '/worker/profile', element: <Profile /> },
+    ],
+  },
+
+  // ==========================================
+  // ADMIN PORTAL ROUTES (Temp)
+  // ==========================================
+  {
+    element: <AdminRoute><DashboardLayout /></AdminRoute>,
+    children: [
+      { path: '/admin', element: <Dashboard /> },
+    ],
+  },
+
+  // ==========================================
+  // FALLBACK / REDIRECTS
+  // ==========================================
+  {
+    path: '/dashboard',
+    element: <Navigate to="/customer/home" replace />,
+  },
+  {
+    path: '/dashboard/jobs',
+    element: <Navigate to="/customer/jobs" replace />,
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);

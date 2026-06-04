@@ -5,7 +5,8 @@ import jobReducer from './slices/jobSlice';
 import applicationReducer from './slices/applicationSlice';
 import chatReducer from './slices/chatSlice';
 import notificationReducer from './slices/notificationSlice';
-import locationReducer from './slices/locationSlice'; // <-- ADD THIS IMPORT
+import locationReducer from './slices/locationSlice';
+import customerReducer from './slices/customerSlice'; // <-- ADDED
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     application: applicationReducer,
     chat: chatReducer,
     notification: notificationReducer,
-    location: locationReducer, // <-- ADD THIS LINE
+    location: locationReducer,
+    customer: customerReducer, // <-- ADDED
   },
 });
