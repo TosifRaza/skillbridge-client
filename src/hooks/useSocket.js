@@ -1,68 +1,35 @@
-// import { useEffect, useState } from 'react';
-// import { io } from 'socket.io-client';
-// import { useSelector } from 'react-redux';
-
-// const SOCKET_SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-// export const useSocket = () => {
-//   const [socket, setSocket] = useState(null);
-//   const { user, token } = useSelector((state) => state.auth);
-
-//   useEffect(() => {
-//     if (token && user) {
-//       const newSocket = io(SOCKET_SERVER_URL, {
-//         auth: { token },
-//         transports: ['websocket', 'polling'], // Fallback to polling if WS fails
-//       });
-
-//       newSocket.on('connect', () => {
-//         console.log('⚡ Socket Connected:', newSocket.id);
-//       });
-
-//       newSocket.on('disconnect', () => {
-//         console.log('🔌 Socket Disconnected');
-//       });
-
-//       setSocket(newSocket);
-
-//       return () => {
-//         newSocket.close();
-//         setSocket(null);
-//       };
-//     }
-//   }, [token, user]);
-
-//   return socket;
-// };
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useSelector } from 'react-redux';
 
-// FIX: Strip the /api/v1 part if it exists, Socket.io connects to the root
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
-const SOCKET_SERVER_URL = API_BASE.replace('/api/v1', '');
+// Ensure we strip /api/v1 if it exists in env vars, socket connects to root
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
 
 export const useSocket = () => {
   const [socket, setSocket] = useState(null);
-  const { user, token } = useSelector((state) => state.auth);
+  
+  // FIX: Changed 'token' to 'accessToken' to match your authSlice state
+  const { user, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (token && user) {
-      const newSocket = io(SOCKET_SERVER_URL, {
-        auth: { token },
-        transports: ['websocket', 'polling'], 
+    if (accessToken && user) {
+      console.log("⚡ Attempting Socket Connection to:", BASE_URL);
+      
+      const newSocket = io(BASE_URL, {
+        auth: { token: accessToken }, // Pass the correct token here
+        transports: ['websocket', 'polling'],
       });
 
       newSocket.on('connect', () => {
-        console.log('⚡ Socket Connected:', newSocket.id);
+        console.log('✅ Socket Connected successfully!');
+      });
+
+      newSocket.on('connect_error', (err) => {
+        console.error('❌ Socket Connection Error:', err.message);
       });
 
       newSocket.on('disconnect', () => {
         console.log('🔌 Socket Disconnected');
-      });
-
-      newSocket.on('connect_error', (err) => {
-        console.error('Socket Connection Error:', err.message);
       });
 
       setSocket(newSocket);
@@ -71,8 +38,10 @@ export const useSocket = () => {
         newSocket.close();
         setSocket(null);
       };
+    } else {
+      console.log("Waiting for Auth to connect socket...");
     }
-  }, [token, user]);
+  }, [accessToken, user]);
 
   return socket;
-};
+}

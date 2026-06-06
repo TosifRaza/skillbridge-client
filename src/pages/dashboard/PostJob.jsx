@@ -430,16 +430,35 @@ const PostJob = () => {
 
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  const handleSubmit = async () => {
+  // const handleSubmit = async () => {
+  //   const data = new FormData();
+  //   Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+
+  //   // Append images (Backend expects 'files')
+  //  if (images.length > 0) {
+  //     for (let i = 0; i < images.length; i++) {
+  //       data.append('images', images[i]); // <-- Changed from 'files' to 'images'
+  //     }
+  //   }
+
+  //   const result = await dispatch(createJob(data));
+  //   if (createJob.fulfilled.match(result)) {
+  //     navigate('/customer/jobs');
+  //   }
+  // };
+    const handleSubmit = async () => {
     const data = new FormData();
     Object.keys(formData).forEach((key) => data.append(key, formData[key]));
 
-    // Append images (Backend expects 'files')
-   if (images.length > 0) {
+    // ================= FIX IS HERE =================
+    // Change 'files' to match EXACTLY what your backend uploadMiddleware expects
+    // Common names: 'images', 'jobImages', 'files'
+    if (images.length > 0) {
       for (let i = 0; i < images.length; i++) {
         data.append('images', images[i]); // <-- Changed from 'files' to 'images'
       }
     }
+    // ==============================================
 
     const result = await dispatch(createJob(data));
     if (createJob.fulfilled.match(result)) {
