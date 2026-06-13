@@ -741,10 +741,14 @@ import WorkerJobDetail from '@/pages/worker/WorkerJobDetail';
 import MyContracts from '@/pages/worker/MyContracts';
 import WorkerProfile from '@/pages/worker/WorkerProfile';
 import WorkerChat from '@/pages/worker/WorkerChat'; // ONLY THIS ONE
-
+import AdminAnalytics from '@/pages/admin/AdminAnalytics';
 // Admin Pages (Temp)
-import Dashboard from '@/pages/dashboard/Dashboard';
-
+// import Dashboard from '@/pages/dashboard/Dashboard';
+import AdminLayout from '@/components/layout/AdminLayout';
+import AdminUsers from '@/pages/admin/AdminUsers';
+import AdminJobs from '@/pages/admin/AdminJobs';
+import AdminReports from '@/pages/admin/AdminReports';
+import AdminHome from '@/pages/admin/AdminHome';
 export const appRouter = createBrowserRouter([
   // PUBLIC
   { element: <PublicLayout />, children: [
@@ -785,9 +789,20 @@ export const appRouter = createBrowserRouter([
   ]},
 
   // ADMIN (Temp)
-  { element: <AdminRoute><DashboardLayout /></AdminRoute>, children: [
-    { path: '/admin', element: <Dashboard /> },
-  ]},
+  // { element: <AdminRoute><DashboardLayout /></AdminRoute>, children: [
+  //   { path: '/admin', element: <Dashboard /> },
+  // ]},
+    {
+    element: <AdminRoute><AdminLayout /></AdminRoute>,
+    children: [
+      { path: '/admin', element: <AdminHome /> },
+      { path: '/admin/users', element: <AdminUsers /> },
+      { path: '/admin/verifications', element: <AdminUsers /> }, // Points to Users page filtered by 'Pending' providers
+      { path: '/admin/jobs', element: <AdminJobs /> },
+      { path: '/admin/reports', element: <AdminReports /> },
+      { path: '/admin/analytics', element: <AdminAnalytics /> },
+    ],
+  },
 
   // REDIRECTS
   { path: '/dashboard', element: <Navigate to="/customer/home" replace /> },

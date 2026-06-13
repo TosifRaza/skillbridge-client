@@ -1,19 +1,3 @@
-
-// import ChatInterface from '@/components/shared/ChatInterface';
-// import ChatPage from '@/components/shared/ChatPage';
-// const WorkerChat = () => {
-//   // IMPORTANT: This conversationId must match the Customer chat for them to connect!
-//   return (
-//     <div className="animate-fade-in h-[calc(100vh-8rem)]">
-//       <ChatInterface conversationId="job_DEFAULT_ROOM" otherUserEmail="Customer" />
-//       <ChatPage userRole="worker" />;
-//     </div>
-//   );
-// };
-
-// export default WorkerChat;
-
-
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchConversations } from '@/store/slices/chatSlice';
@@ -24,6 +8,7 @@ import EmptyState from '@/components/ui/EmptyState';
 const WorkerChat = () => {
   const dispatch = useAppDispatch();
   const { conversations, loading } = useAppSelector((state) => state.chat);
+  const { user } = useAppSelector((state) => state.auth); // Get current worker
   const [activeConvo, setActiveConvo] = useState(null);
 
   useEffect(() => {
@@ -31,6 +16,9 @@ const WorkerChat = () => {
   }, [dispatch]);
 
   if (loading && conversations.length === 0) return <div className="flex justify-center py-20"><Spinner /></div>;
+
+  // Find active conversation data
+  const activeConvoData = conversations.find(c => c.conversationId === activeConvo);
 
   return (
     <div className="animate-fade-in flex h-[calc(100vh-8rem)] gap-4">
@@ -55,8 +43,12 @@ const WorkerChat = () => {
 
       {/* Main Chat Area */}
       <div className="flex-1">
-        {activeConvo ? (
-          <ChatInterface conversationId={activeConvo} otherUserEmail="Customer" />
+        {activeConvo && activeConvoData ? (
+          <ChatInterface 
+            conversationId={activeConvo} 
+            otherUserEmail={activeConvoData.customerEmail} // Use actual customer email
+            currentUserEmail={user?.email} // Pass current worker email
+          />
         ) : (
           <div className="flex items-center justify-center h-full text-surface-400 dark:text-surface-500">
             Select a conversation to start messaging

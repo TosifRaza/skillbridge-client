@@ -7,7 +7,7 @@ import chatReducer from './slices/chatSlice';
 import notificationReducer from './slices/notificationSlice';
 import locationReducer from './slices/locationSlice';
 import customerReducer from './slices/customerSlice'; // <-- ADDED
-
+import adminReducer from './slices/adminSlice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -18,5 +18,6 @@ export const store = configureStore({
     notification: notificationReducer,
     location: locationReducer,
     customer: customerReducer, // <-- ADDED
+    admin: adminReducer,
   },
 });
