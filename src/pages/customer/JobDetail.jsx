@@ -311,11 +311,11 @@
 // };
 
 // export default JobDetail;
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchJobById } from '@/store/slices/jobSlice';
-import { fetchJobApplications, acceptApplication, rejectApplication } from '@/store/slices/applicationSlice';
+import { fetchJobApplications, acceptApplication, rejectApplication, clearApplications } from '@/store/slices/applicationSlice';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -335,19 +335,38 @@ const CustomerJobDetail = () => {
   const { currentJob: job, loading: jobLoading } = useAppSelector((state) => state.job);
   const { applications, loading: appLoading } = useAppSelector((state) => state.application);
   const { user } = useAppSelector((state) => state.auth);
+  const [actionError, setActionError] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const isOwner = job?.customer?._id === user?._id || job?.customer === user?._id;
 
   useEffect(() => {
     dispatch(fetchJobById(id));
+    dispatch(clearApplications());
+
+    return () => dispatch(clearApplications());
   }, [dispatch, id]);
 
   // Fetch applications ONLY if the job is loaded and the user is the owner
   useEffect(() => {
-    if (isOwner && job) {
+    if (isOwner && String(job?._id) === id) {
       dispatch(fetchJobApplications(id));
     }
-  }, [dispatch, id, isOwner, job]);
+  }, [dispatch, id, isOwner, job?._id]);
+
+  const handleApplicationAction = async (action, applicationId) => {
+    setActionError(null);
+    setActionLoadingId(applicationId);
+
+    const result = await dispatch(action(applicationId));
+    if (action.fulfilled.match(result)) {
+      if (action === acceptApplication) await dispatch(fetchJobById(id));
+    } else {
+      setActionError(result.payload || 'Could not update this application. Please try again.');
+    }
+
+    setActionLoadingId(null);
+  };
 
   if (jobLoading || !job) return <div className="flex justify-center py-20"><Spinner /></div>;
 
@@ -386,6 +405,11 @@ const CustomerJobDetail = () => {
               
               {appLoading ? <Spinner /> : applications.length > 0 ? (
                 <div className="space-y-4">
+                  {actionError && (
+                    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      {actionError}
+                    </div>
+                  )}
                   {applications.map(app => (
                     <Card key={app._id} className="dark:bg-surface-800 p-5 border-l-4 border-l-surface-300 dark:border-l-surface-600 hover:shadow-medium transition-shadow">
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -403,8 +427,22 @@ const CustomerJobDetail = () => {
                           
                           {app.status === 'Pending' && (
                             <div className="flex gap-2 ml-auto">
-                              <Button size="sm" onClick={() => dispatch(acceptApplication(app._id))}>Accept</Button>
-                              <Button size="sm" variant="outline" onClick={() => dispatch(rejectApplication(app._id))}>Reject</Button>
+                              <Button
+                                size="sm"
+                                isLoading={actionLoadingId === app._id}
+                                disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
+                                onClick={() => handleApplicationAction(acceptApplication, app._id)}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={Boolean(actionLoadingId)}
+                                onClick={() => handleApplicationAction(rejectApplication, app._id)}
+                              >
+                                Reject
+                              </Button>
                             </div>
                           )}
                           

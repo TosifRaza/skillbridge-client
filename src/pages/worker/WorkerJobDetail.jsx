@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchJobById } from '@/store/slices/jobSlice';
 import ApplyModal from '@/components/shared/ApplyModal';
+import axiosInstance from '@/api/axiosInstance';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -19,10 +20,26 @@ const WorkerJobDetail = () => {
   const dispatch = useAppDispatch();
   const { currentJob: job, loading } = useAppSelector((state) => state.job);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState({ loading: true, applied: false, status: null });
 
   useEffect(() => {
     dispatch(fetchJobById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    let active = true;
+    setApplicationStatus({ loading: true, applied: false, status: null });
+
+    axiosInstance.get(`/applications/status/${id}`)
+      .then(({ data }) => {
+        if (active) setApplicationStatus({ loading: false, ...data.data });
+      })
+      .catch(() => {
+        if (active) setApplicationStatus({ loading: false, applied: false, status: null });
+      });
+
+    return () => { active = false; };
+  }, [id]);
 
   if (loading || !job) return <div className="flex justify-center py-20"><Spinner /></div>;
 
@@ -78,9 +95,17 @@ const WorkerJobDetail = () => {
 
           {/* Action Button */}
           {job.status === 'Open' && (
-            <Button className="w-full shadow-glow text-lg py-3" onClick={() => setShowApplyModal(true)}>
-              Apply Now
-            </Button>
+            applicationStatus.loading ? (
+              <Button className="w-full text-lg py-3" disabled>Checking application…</Button>
+            ) : applicationStatus.applied ? (
+              <Button className="w-full text-lg py-3" variant="secondary" disabled>
+                {applicationStatus.status === 'Accepted' ? 'Application Accepted' : 'Already Applied'}
+              </Button>
+            ) : (
+              <Button className="w-full shadow-glow text-lg py-3" onClick={() => setShowApplyModal(true)}>
+                Apply Now
+              </Button>
+            )
           )}
 
           {job.status !== 'Open' && (
@@ -92,7 +117,17 @@ const WorkerJobDetail = () => {
       </div>
 
       {/* Apply Modal Trigger */}
-      {showApplyModal && <ApplyModal jobId={id} onClose={() => setShowApplyModal(false)} />}
+      {showApplyModal && (
+        <ApplyModal
+          jobId={id}
+          onClose={() => setShowApplyModal(false)}
+          onApplied={() => setApplicationStatus({ loading: false, applied: true, status: 'Pending' })}
+          onAlreadyApplied={() => {
+            setApplicationStatus({ loading: false, applied: true, status: 'Pending' });
+            setShowApplyModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };

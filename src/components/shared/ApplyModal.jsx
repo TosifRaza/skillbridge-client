@@ -4,7 +4,7 @@ import { applyToJob } from '@/store/slices/applicationSlice';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
-const ApplyModal = ({ jobId, onClose }) => {
+const ApplyModal = ({ jobId, onClose, onApplied, onAlreadyApplied }) => {
   const dispatch = useAppDispatch();
   const [formData, setFormData] = useState({ proposalMessage: '', bidAmount: '', estimatedCompletionTime: '' });
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,10 @@ const ApplyModal = ({ jobId, onClose }) => {
     
     const result = await dispatch(applyToJob({ job: jobId, ...formData }));
     if (applyToJob.fulfilled.match(result)) {
+      onApplied?.();
       onClose(); // Close modal on success
+    } else if (String(result.payload || '').toLowerCase().includes('already applied')) {
+      onAlreadyApplied?.();
     } else {
       setError(result.payload || 'Failed to submit application');
     }

@@ -1,181 +1,62 @@
-// import { Outlet, Link, useNavigate } from 'react-router-dom';
-// // import { useSocket } from '@/hooks/useSocket';
-// import { useAppDispatch, useAppSelector } from '@/store/hooks';
-// import { logoutUser } from '@/store/slices/authSlice';
-// import DarkModeToggle from '@/components/ui/DarkModeToggle';
-// import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineUserCircle, HiOutlineLogout } from 'react-icons/hi';
-// import { useSocket } from '@/hooks/useSocket';
-// import { SocketProvider } from '@/context/SocketContext';
-
-// const CustomerLayout = () => {
-//   const dispatch = useAppDispatch();
-//   const navigate = useNavigate();
-//   const { user } = useAppSelector((state) => state.auth);
-//   const socket = useSocket(); // <--- ADD THIS LINE
-//   const handleLogout = async () => {
-//     await dispatch(logoutUser());
-//     navigate('/auth/login');
-//   };
-
-//   const navItems = [
-//     { icon: HiOutlineHome, label: 'Home', path: '/customer/home' },
-//     { icon: HiOutlineBriefcase, label: 'My Jobs', path: '/customer/jobs' },
-//     { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
-//     { icon: HiOutlineUserCircle, label: 'Profile', path: '/customer/profile' },
-//   ];
-//   //  const socket = useSocket(); // Initializes socket connection for the whole portal
-
-//   return (
-//     <div className="min-h-screen flex bg-surface-50 dark:bg-surface-900 transition-colors">
-//       {/* Sidebar */}
-//       <aside className="w-64 bg-surface-900 dark:bg-black text-white flex flex-col fixed h-full z-40">
-//         <div className="h-16 flex items-center px-6 border-b border-surface-800">
-//           <Link to="/customer/home" className="flex items-center gap-2">
-//             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-//             <span className="text-xl font-bold">SkillBridge</span>
-//           </Link>
-//         </div>
-//         <nav className="flex-1 px-4 py-6 space-y-2">
-//           {navItems.map((item) => (
-//             <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-surface-300 hover:bg-surface-800 hover:text-white transition">
-//               <item.icon className="w-5 h-5" /> {item.label}
-//             </Link>
-//           ))}
-//         </nav>
-//         <div className="p-4 border-t border-surface-800">
-//           <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-400 hover:bg-surface-800 w-full transition">
-//             <HiOutlineLogout className="w-5 h-5" /> Logout
-//           </button>
-//         </div>
-//       </aside>
-
-//       {/* Main Content */}
-//       <div className="flex-1 ml-64 flex flex-col">
-        
-//         {/* Top Bar */}
-//         <header className="h-16 bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 sticky top-0 z-30 flex items-center justify-between px-8 transition-colors">
-//           <div />
-//           <div className="flex items-center gap-4">
-//             <DarkModeToggle />
-            
-//             {/* User Profile Display */}
-//             <div className="flex items-center gap-2">
-//               {/* Avatar Circle: Shows Cloudinary image or First Letter Initial */}
-//               <div className="w-8 h-8 bg-surface-200 dark:bg-surface-700 rounded-full flex items-center justify-center text-sm font-bold text-primary-600 overflow-hidden">
-//                 {user?.avatar?.url ? (
-//                   <img src={user.avatar.url} alt="Avatar" className="w-full h-full object-cover" />
-//                 ) : (
-//                   user?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()
-//                 )}
-//               </div>
-              
-//               {/* Name Display: Shows Full Name or falls back to Email */}
-//               <span className="text-sm font-medium text-surface-700 dark:text-surface-300 hidden md:block">
-//                 {user?.fullName || user?.email}
-//               </span>
-//             </div>
-
-//           </div>
-//         </header>
-
-//         <main className="flex-1 p-8">
-//           <Outlet />
-//         </main>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default CustomerLayout;
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineUserCircle, HiOutlineLogout } from 'react-icons/hi';
-
-// CHANGE: Import SocketProvider instead of the old useSocket hook
+import Avatar from '@/components/ui/Avatar';
+import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineUserCircle, HiOutlineLogout, HiOutlinePlus } from 'react-icons/hi';
 import { SocketProvider } from '@/context/SocketContext';
+
+const navItems = [
+  { icon: HiOutlineHome, label: 'Overview', path: '/customer/home' },
+  { icon: HiOutlineBriefcase, label: 'My jobs', path: '/customer/jobs' },
+  { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
+  { icon: HiOutlineUserCircle, label: 'Profile', path: '/customer/profile' },
+];
 
 const CustomerLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
-
-  // CHANGE: Removed const socket = useSocket() from here. 
-  // The Layout itself doesn't need the socket, but the pages rendered inside <Outlet /> will!
-  
-  const handleLogout = async () => {
-    await dispatch(logoutUser());
-    navigate('/auth/login');
-  };
-
-  const navItems = [
-    { icon: HiOutlineHome, label: 'Home', path: '/customer/home' },
-    { icon: HiOutlineBriefcase, label: 'My Jobs', path: '/customer/jobs' },
-    { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
-    { icon: HiOutlineUserCircle, label: 'Profile', path: '/customer/profile' },
-  ];
+  const handleLogout = async () => { await dispatch(logoutUser()); navigate('/auth/login'); };
+  const displayName = user?.fullName || user?.email?.split('@')[0] || 'there';
 
   return (
-    // CHANGE: Wrap the entire layout with SocketProvider
-    // This ensures the socket connects when a customer logs in and disconnects on logout
     <SocketProvider>
-      <div className="min-h-screen flex bg-surface-50 dark:bg-surface-900 transition-colors">
-        {/* Sidebar */}
-        <aside className="w-64 bg-surface-900 dark:bg-black text-white flex flex-col fixed h-full z-40">
-          <div className="h-16 flex items-center px-6 border-b border-surface-800">
-            <Link to="/customer/home" className="flex items-center gap-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-              <span className="text-xl font-bold">SkillBridge</span>
-            </Link>
+      <div className="portal-shell min-h-screen bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100">
+        <aside className="portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col text-white lg:flex">
+          <Link to="/customer/home" className="flex h-[84px] items-center gap-3 px-7">
+            <span className="brand-mark">S</span><span className="text-[19px] font-bold tracking-tight">SkillBridge</span>
+          </Link>
+          <div className="mx-5 mb-6 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-indigo-200">Customer space</p>
+            <p className="mt-2 text-sm font-semibold">Your projects, in progress</p>
+            <p className="mt-1 text-xs leading-5 text-slate-400">Find trusted talent and keep every detail together.</p>
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-surface-300 hover:bg-surface-800 hover:text-white transition">
-                <item.icon className="w-5 h-5" /> {item.label}
-              </Link>
-            ))}
+          <p className="px-7 pb-3 text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Workspace</p>
+          <nav className="flex-1 space-y-1 px-4">
+            {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `portal-nav-link ${isActive ? 'portal-nav-link-active' : ''}`}><Icon className="h-[19px] w-[19px]" />{label}{label === 'Messages' && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-400" />}</NavLink>)}
           </nav>
-          <div className="p-4 border-t border-surface-800">
-            <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-400 hover:bg-surface-800 w-full transition">
-              <HiOutlineLogout className="w-5 h-5" /> Logout
-            </button>
+          <div className="mx-5 mb-5 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/10 p-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-100"><span className="h-2 w-2 rounded-full bg-emerald-400" />Your account is ready</div>
+            <p className="mt-2 text-[11px] leading-4 text-slate-400">Post a job to connect with skilled professionals.</p>
+            <Link to="/customer/jobs/post" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-indigo-200"><HiOutlinePlus /> Post a job</Link>
+          </div>
+          <div className="border-t border-white/10 p-4">
+            <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"><HiOutlineLogout className="h-5 w-5" />Sign out</button>
           </div>
         </aside>
 
-        {/* Main Content */}
-        <div className="flex-1 ml-64 flex flex-col">
-          
-          {/* Top Bar */}
-          <header className="h-16 bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 sticky top-0 z-30 flex items-center justify-between px-8 transition-colors">
-            <div />
-            <div className="flex items-center gap-4">
-              <DarkModeToggle />
-              
-              {/* User Profile Display */}
-              <div className="flex items-center gap-2">
-                {/* Avatar Circle: Shows Cloudinary image or First Letter Initial */}
-                <div className="w-8 h-8 bg-surface-200 dark:bg-surface-700 rounded-full flex items-center justify-center text-sm font-bold text-primary-600 overflow-hidden">
-                  {user?.avatar?.url ? (
-                    <img src={user.avatar.url} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    user?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()
-                  )}
-                </div>
-                
-                {/* Name Display: Shows Full Name or falls back to Email */}
-                <span className="text-sm font-medium text-surface-700 dark:text-surface-300 hidden md:block">
-                  {user?.fullName || user?.email}
-                </span>
-              </div>
-
-            </div>
+        <div className="flex min-h-screen flex-col lg:pl-[264px]">
+          <header className="portal-topbar sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-10">
+            <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark h-9 w-9">S</span><span className="font-bold tracking-tight">SkillBridge</span></Link>
+            <div className="hidden lg:block"><p className="text-xs font-medium text-slate-400">CUSTOMER WORKSPACE</p><p className="mt-0.5 text-sm font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
+            <div className="ml-auto flex items-center gap-3 sm:gap-5"><DarkModeToggle /><div className="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block" /><div className="flex items-center gap-2.5"><Avatar name={user?.fullName || user?.email} size="sm" /><div className="hidden sm:block"><p className="max-w-48 truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{user?.fullName || 'Customer'}</p><p className="max-w-48 truncate text-[11px] text-slate-400">{user?.email}</p></div></div></div>
           </header>
-
-          <main className="flex-1 p-8">
-            <Outlet />
-          </main>
+          <main className="portal-main mx-auto w-full max-w-[1680px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-8 lg:px-10 lg:pb-10"> <Outlet /> </main>
         </div>
+        <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
+          {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}><Icon className="h-5 w-5"/><span>{label}</span></NavLink>)}
+        </nav>
       </div>
     </SocketProvider>
   );

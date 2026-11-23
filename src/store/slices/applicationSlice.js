@@ -82,7 +82,11 @@ const applicationSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch Job Applications (Customer)
-      .addCase(fetchJobApplications.pending, (state) => { state.loading = true; })
+      .addCase(fetchJobApplications.pending, (state) => {
+        state.loading = true;
+        state.applications = [];
+        state.error = null;
+      })
       .addCase(fetchJobApplications.fulfilled, (state, action) => {
         state.loading = false;
         state.applications = action.payload;

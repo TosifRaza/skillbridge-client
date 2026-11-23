@@ -130,13 +130,19 @@ const CustomerHome = () => {
 
   return (
     <div className="animate-fade-in">
-      {/* Greeting */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-surface-900 dark:text-white">
-          {getGreeting()}, {displayName}! 👋
-        </h1>
-        <p className="text-surface-500 dark:text-surface-400 mt-1">Ready to get things done? Here's your dashboard overview.</p>
-      </div>
+      <section className="relative mb-8 overflow-hidden rounded-[28px] bg-[#171d3c] px-6 py-7 text-white shadow-[0_22px_55px_rgba(43,48,112,.18)] sm:px-9 sm:py-9">
+        <div className="absolute -right-14 -top-28 h-72 w-72 rounded-full bg-indigo-500/30 blur-3xl" />
+        <div className="absolute -bottom-32 right-[24%] h-64 w-64 rounded-full bg-violet-500/20 blur-3xl" />
+        <div className="relative flex flex-col items-start justify-between gap-7 md:flex-row md:items-center">
+          <div className="max-w-xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.08] px-3 py-1.5 text-[11px] font-semibold text-indigo-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400"/>YOUR NEXT PROJECT STARTS HERE</div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{getGreeting()}, {displayName}.</h1>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-indigo-100/75">Bring your to-do list to life. Find a trusted professional and manage every project in one place.</p>
+          </div>
+          <Link to="/customer/jobs/post" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-700 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-indigo-50"><HiOutlineBriefcase className="h-4 w-4"/>Post a new job <HiOutlineArrowRight className="h-4 w-4"/></Link>
+        </div>
+        <div className="relative mt-7 flex flex-wrap gap-x-7 gap-y-2 border-t border-white/10 pt-5 text-xs text-indigo-100/80"><span className="inline-flex items-center gap-2"><HiOutlineCheckCircle className="h-4 w-4 text-emerald-300"/>One place for every project</span><span className="inline-flex items-center gap-2"><HiOutlineChatAlt className="h-4 w-4 text-indigo-200"/>Stay connected with your worker</span></div>
+      </section>
 
       {/* Main 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -271,6 +271,10 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    markConversationRead: (state, action) => {
+      const conversation = state.conversations.find((item) => item.conversationId === action.payload);
+      if (conversation) conversation.unreadCount = 0;
+    },
     addSocketMessage: (state, action) => {
       state.messages.push(action.payload);
     },
@@ -298,5 +302,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { addSocketMessage, clearChat } = chatSlice.actions;
+export const { addSocketMessage, clearChat, markConversationRead } = chatSlice.actions;
 export default chatSlice.reducer;

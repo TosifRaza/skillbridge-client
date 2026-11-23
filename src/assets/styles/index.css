@@ -1,9 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Next-Gen Theme Variables */
 :root {
@@ -47,5 +44,39 @@ body {
   .gradient-primary {
     @apply bg-gradient-to-r from-primary-600 to-primary-500;
   }
-  
+
+  .portal-sidebar {
+    background: radial-gradient(ellipse at 10% 0%, rgba(99, 102, 241, .2), transparent 34%),
+      linear-gradient(180deg, #11172a 0%, #101629 55%, #0c1223 100%);
+    box-shadow: 12px 0 36px rgba(15, 23, 42, .08);
+  }
+
+  .brand-mark {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-400 via-primary-600 to-violet-600 text-base font-extrabold text-white shadow-lg shadow-indigo-950/30;
+  }
+
+  .portal-nav-link {
+    @apply relative flex items-center gap-3 rounded-xl px-3.5 py-3 text-[13px] font-medium text-slate-400 transition duration-200 hover:bg-white/[.07] hover:text-white;
+  }
+
+  .portal-nav-link-active {
+    @apply bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white shadow-inner shadow-white/[.03];
+  }
+
+  .portal-nav-link-active::before {
+    content: '';
+    @apply absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-indigo-400;
+  }
+
+  .mobile-nav-item {
+    @apply flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-medium text-slate-400 transition;
+  }
+
+  .mobile-nav-active {
+    @apply text-primary-600 dark:text-primary-400;
+  }
+
+  .mobile-nav-active svg {
+    filter: drop-shadow(0 3px 5px rgba(99, 102, 241, .28));
+  }
 }

@@ -4,11 +4,10 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchAvailableJobs } from '@/store/slices/jobSlice';
 import { fetchMyApplications } from '@/store/slices/applicationSlice';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
-import { HiOutlineBriefcase, HiOutlineCurrencyDollar, HiOutlineClipboardList, HiOutlineSearch } from 'react-icons/hi';
+import { HiOutlineBriefcase, HiOutlineCurrencyDollar, HiOutlineClipboardList, HiOutlineSearch, HiOutlineArrowRight, HiOutlineCheckCircle } from 'react-icons/hi';
 
 const WorkerHome = () => {
   const dispatch = useAppDispatch();
@@ -28,17 +27,14 @@ const WorkerHome = () => {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-surface-900 dark:text-white">Good Morning, {displayName}!</h1>
-          <p className="text-surface-500 dark:text-surface-400 mt-1">Find local and digital opportunities that match your skills.</p>
+      <section className="relative mb-8 overflow-hidden rounded-[28px] bg-[#171d3c] px-6 py-7 text-white shadow-[0_22px_55px_rgba(43,48,112,.18)] sm:px-9 sm:py-9">
+        <div className="absolute -right-10 -top-28 h-72 w-72 rounded-full bg-violet-500/30 blur-3xl"/><div className="absolute -bottom-32 right-[22%] h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl"/>
+        <div className="relative flex flex-col items-start justify-between gap-7 md:flex-row md:items-center">
+          <div className="max-w-xl"><div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.08] px-3 py-1.5 text-[11px] font-semibold text-indigo-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400"/>YOUR NEXT OPPORTUNITY</div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Welcome back, {displayName}.</h1><p className="mt-2 max-w-lg text-sm leading-6 text-indigo-100/75">Put your skills to work. Find projects that fit your experience and build lasting client relationships.</p></div>
+          <Link to="/worker/jobs" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-700 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-indigo-50"><HiOutlineSearch className="h-4 w-4"/>Explore opportunities <HiOutlineArrowRight className="h-4 w-4"/></Link>
         </div>
-        <Link to="/worker/jobs">
-          <Button className="shadow-glow flex items-center gap-2">
-            <HiOutlineSearch className="w-5 h-5" /> Find Work
-          </Button>
-        </Link>
-      </div>
+        <div className="relative mt-7 flex flex-wrap gap-x-7 gap-y-2 border-t border-white/10 pt-5 text-xs text-indigo-100/80"><span className="inline-flex items-center gap-2"><HiOutlineCheckCircle className="h-4 w-4 text-emerald-300"/>Projects matched to your skills</span><span className="inline-flex items-center gap-2"><HiOutlineBriefcase className="h-4 w-4 text-indigo-200"/>Manage applications in one place</span></div>
+      </section>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">

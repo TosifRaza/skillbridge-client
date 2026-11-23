@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchAvailableJobs } from '@/store/slices/jobSlice';
+import axiosInstance from '@/api/axiosInstance';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -13,6 +14,7 @@ import { PHASE_1_SERVICES } from '@/constants/services';
 const BrowseJobs = () => {
   const dispatch = useAppDispatch();
   const { jobs, totalPages, page, loading } = useAppSelector((state) => state.job);
+  const [applicationStatuses, setApplicationStatuses] = useState(null);
   
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('All');
@@ -28,6 +30,20 @@ const BrowseJobs = () => {
     };
     dispatch(fetchAvailableJobs(params));
   }, [dispatch, keyword, category, serviceType, page]);
+
+  useEffect(() => {
+    let active = true;
+
+    axiosInstance.get('/applications/my-statuses')
+      .then(({ data }) => {
+        if (active) setApplicationStatuses(data.data || {});
+      })
+      .catch(() => {
+        if (active) setApplicationStatuses({});
+      });
+
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className="animate-fade-in">
@@ -64,13 +80,20 @@ const BrowseJobs = () => {
       {loading ? <div className="flex justify-center py-16"><Spinner /></div> : 
        jobs.length > 0 ? (
         <div className="space-y-4">
-          {jobs.map(job => (
+          {jobs.map(job => {
+            const applicationStatus = applicationStatuses?.[job._id];
+            return (
             <Link to={`/worker/jobs/${job._id}`} key={job._id}>
               <Card hover className="dark:bg-surface-800 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant="success">{job.status}</Badge>
                     <Badge variant="primary">{job.serviceType || 'local'}</Badge>
+                    {applicationStatus && (
+                      <Badge variant={applicationStatus === 'Accepted' ? 'success' : 'primary'}>
+                        {applicationStatus === 'Accepted' ? 'Accepted' : 'Applied'}
+                      </Badge>
+                    )}
                   </div>
                   <h3 className="text-xl font-bold text-surface-900 dark:text-white">{job.title}</h3>
                   <p className="text-sm text-surface-500 dark:text-surface-400 mt-1 line-clamp-2">{job.description}</p>
@@ -81,11 +104,14 @@ const BrowseJobs = () => {
                 </div>
                 <div className="flex flex-row md:flex-col items-end gap-2">
                   <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">₹{job.budget}</span>
-                  <Button size="sm" variant="outline">View & Apply</Button>
+                  <Button size="sm" variant="outline">
+                    {applicationStatus ? 'View Application' : 'View & Apply'}
+                  </Button>
                 </div>
               </Card>
             </Link>
-          ))}
+            );
+          })}
           
           {/* Pagination Placeholder */}
           {totalPages > 1 && (
