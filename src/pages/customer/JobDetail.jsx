@@ -399,10 +399,10 @@ const CustomerJobDetail = () => {
           </Card>
 
           {/* Applications Section (CUSTOMER ONLY) */}
-          {isOwner && (job.status === 'Open' || job.status === 'Assigned') && (
+          {isOwner && (job.status === 'Open' || job.status === 'Assigned' || job.status === 'In-Progress' || job.status === 'Completed') && (
             <div>
               <h2 className="text-xl font-bold text-surface-900 dark:text-white mb-4">
-                Proposals ({applications.length})
+                {job.status === 'Open' ? `Proposals (${applications.length})` : 'Assigned Worker & Contract Details'}
               </h2>
               
               {appLoading ? <Spinner /> : applications.length > 0 ? (
@@ -412,49 +412,82 @@ const CustomerJobDetail = () => {
                       {actionError}
                     </div>
                   )}
-                  {applications.map(app => (
-                    <Card key={app._id} className="dark:bg-surface-800 p-5 border-l-4 border-l-surface-300 dark:border-l-surface-600 hover:shadow-medium transition-shadow">
-                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={app.worker?.email || 'Worker'} />
-                          <div>
-                            <p className="font-semibold text-surface-900 dark:text-white">{app.worker?.email || 'Worker'}</p>
-                            <p className="text-sm text-surface-500 dark:text-surface-400 line-clamp-1 mt-1">{app.proposalMessage}</p>
+                  {applications.map(app => {
+                    const isAccepted = app.status === 'Accepted';
+                    return (
+                      <Card
+                        key={app._id}
+                        className={`dark:bg-surface-800 p-5 border-l-4 transition-all ${
+                          isAccepted
+                            ? 'border-l-indigo-600 ring-2 ring-indigo-500/20 shadow-medium'
+                            : 'border-l-surface-300 dark:border-l-surface-600 hover:shadow-medium'
+                        }`}
+                      >
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={app.worker?.fullName || app.worker?.email || 'Worker'} />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-surface-900 dark:text-white">
+                                  {app.worker?.fullName || app.worker?.email?.split('@')[0] || 'Worker'}
+                                </p>
+                                {isAccepted && (
+                                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300">
+                                    Hired Provider
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-surface-400">{app.worker?.email}</p>
+                              <p className="text-sm text-surface-500 dark:text-surface-400 line-clamp-1 mt-1">
+                                {app.proposalMessage}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 w-full md:w-auto">
+                            <span className="text-primary-600 dark:text-primary-400 font-bold text-lg">₹{app.bidAmount}</span>
+                            <span className="text-xs text-surface-400">{app.estimatedCompletionTime}</span>
+                            
+                            {app.status === 'Pending' && (
+                              <div className="flex gap-2 ml-auto">
+                                <Button
+                                  size="sm"
+                                  isLoading={actionLoadingId === app._id}
+                                  disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
+                                  onClick={() => handleApplicationAction(acceptApplication, app._id)}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={Boolean(actionLoadingId)}
+                                  onClick={() => handleApplicationAction(rejectApplication, app._id)}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {app.status !== 'Pending' && !isAccepted && (
+                              <Badge variant={app.status === 'Accepted' ? 'success' : 'danger'}>{app.status}</Badge>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-4 w-full md:w-auto">
-                          <span className="text-primary-600 dark:text-primary-400 font-bold">₹{app.bidAmount}</span>
-                          <span className="text-xs text-surface-400">{app.estimatedCompletionTime}</span>
-                          
-                          {app.status === 'Pending' && (
-                            <div className="flex gap-2 ml-auto">
-                              <Button
-                                size="sm"
-                                isLoading={actionLoadingId === app._id}
-                                disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
-                                onClick={() => handleApplicationAction(acceptApplication, app._id)}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={Boolean(actionLoadingId)}
-                                onClick={() => handleApplicationAction(rejectApplication, app._id)}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                          
-                          {app.status !== 'Pending' && (
-                            <Badge variant={app.status === 'Accepted' ? 'success' : 'danger'}>{app.status}</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+
+                        {/* WORKER COMPLETION & QR PAYMENT FLOW ON WORKER CARD */}
+                        {isAccepted && (
+                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <WorkCompletionPaymentCard
+                              jobId={id}
+                              viewerRole="customer"
+                              onUpdated={() => dispatch(fetchJobById(id))}
+                            />
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
                 <EmptyState icon="📭" title="No proposals yet" description="Workers haven't applied to this job yet. Check back soon!" />
@@ -485,7 +518,7 @@ const CustomerJobDetail = () => {
               </div>
             </div>
           </Card>
-          {isOwner && job.hiredProvider && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
+          {isOwner && job.hiredProvider && applications.length === 0 && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
             <WorkCompletionPaymentCard
               jobId={id}
               viewerRole="customer"
