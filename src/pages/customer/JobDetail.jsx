@@ -323,6 +323,7 @@ import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
 import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import WorkCompletionPaymentCard from '@/components/shared/WorkCompletionPaymentCard';
 import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineBriefcase } from 'react-icons/hi';
 
 const statusVariant = {
@@ -485,7 +486,7 @@ const CustomerJobDetail = () => {
             </div>
           </Card>
           {isOwner && job.hiredProvider && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
-            <ContractPaymentPanel
+            <WorkCompletionPaymentCard
               jobId={id}
               viewerRole="customer"
               onUpdated={() => dispatch(fetchJobById(id))}

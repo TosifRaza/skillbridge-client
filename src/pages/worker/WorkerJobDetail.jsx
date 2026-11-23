@@ -9,6 +9,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import WorkCompletionPaymentCard from '@/components/shared/WorkCompletionPaymentCard';
 import { HiOutlineArrowLeft, HiOutlineLocationMarker, HiOutlineClock, HiOutlineBriefcase } from 'react-icons/hi';
 
 const statusVariant = {
@@ -93,7 +94,7 @@ const WorkerJobDetail = () => {
           </Card>
 
           {applicationStatus.status === 'Accepted' && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
-            <ContractPaymentPanel
+            <WorkCompletionPaymentCard
               jobId={id}
               viewerRole="provider"
               onUpdated={() => dispatch(fetchJobById(id))}

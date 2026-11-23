@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Tabs from '@/components/ui/Tabs';
 import EmptyState from '@/components/ui/EmptyState';
 import Spinner from '@/components/ui/Spinner';
-import { HiOutlineClock, HiOutlineCurrencyDollar, HiOutlineChatAlt, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineClock, HiOutlineCurrencyDollar, HiOutlineChatAlt, HiOutlineX, HiOutlineCheckCircle } from 'react-icons/hi';
 
 const statusVariant = {
   Pending: 'warning', Accepted: 'success', Rejected: 'danger', Withdrawn: 'gray',
@@ -93,8 +93,13 @@ const MyContracts = () => {
                   
                   {app.status === 'Accepted' && (
                     <>
+                      <Link to={`/worker/jobs/${app.job?._id || app.job}`}>
+                        <Button size="sm" className="gradient-primary flex items-center gap-1 w-full md:w-auto justify-center text-white">
+                          <HiOutlineCheckCircle className="w-4 h-4" /> Work Complete & Request QR
+                        </Button>
+                      </Link>
                       <Link to="/worker/chat">
-                        <Button size="sm" className="flex items-center gap-1 w-full md:w-auto justify-center">
+                        <Button size="sm" variant="outline" className="flex items-center gap-1 w-full md:w-auto justify-center">
                           <HiOutlineChatAlt className="w-4 h-4" /> Message
                         </Button>
                       </Link>

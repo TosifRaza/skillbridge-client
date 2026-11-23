@@ -79,6 +79,20 @@ const MyJobs = () => {
                     <span className="font-bold text-primary-600 dark:text-primary-400">₹{job.budget}</span>
                     <span>{job.location?.address || 'Remote'}</span>
                   </div>
+
+                  {job.workSubmittedAt && job.status !== 'Completed' && (
+                    <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50/80 p-3 text-xs dark:border-indigo-900/60 dark:bg-indigo-950/40">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[10px]">✓</span>
+                        <span className="font-semibold text-indigo-950 dark:text-indigo-200">
+                          Worker marked work as COMPLETED! Approve to generate Payment QR.
+                        </span>
+                      </div>
+                      <Link to={`/customer/jobs/${job._id}`} className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1 font-bold text-white shadow transition hover:bg-indigo-700">
+                        Review & Pay QR →
+                      </Link>
+                    </div>
+                  )}
                 </div>
                 <div className="flex md:flex-col gap-2 justify-end">
                   {job.status === 'Open' && (
