@@ -132,39 +132,39 @@ const WorkCompletionPaymentCard = ({ jobId, viewerRole = 'customer', onUpdated }
   return (
     <section className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-soft dark:border-slate-800 dark:bg-surface-900">
       {/* Top Banner */}
-      <div className="bg-[#171d3c] px-5 py-4 text-white">
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-5 py-4 text-white">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-emerald-300">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-emerald-300 shadow-inner">
               <HiOutlineShieldCheck className="h-5 w-5" />
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.18em] text-indigo-200">
-                Work Completion & QR Payout
+                Work Settlement & QR Payment
               </p>
-              <h4 className="text-base font-bold text-white">
+              <h4 className="text-lg font-extrabold text-white">
                 {formatINR(details.amount)}
               </h4>
             </div>
           </div>
 
           <span
-            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+            className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${
               isCompleted
                 ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30'
                 : customerApproved
                 ? 'bg-indigo-400/20 text-indigo-200 border border-indigo-400/30'
                 : workSubmitted
-                ? 'bg-amber-400/20 text-amber-200 border border-amber-400/30'
+                ? 'bg-amber-400/20 text-amber-200 border border-amber-400/30 animate-pulse'
                 : 'bg-white/10 text-slate-300'
             }`}
           >
             {isCompleted
-              ? 'Paid & Completed'
+              ? 'Paid & Settled'
               : customerApproved
-              ? 'QR Ready'
+              ? 'QR Code Active'
               : workSubmitted
-              ? 'Awaiting Approval'
+              ? 'Needs Verification'
               : 'In Progress'}
           </span>
         </div>
@@ -185,24 +185,26 @@ const WorkCompletionPaymentCard = ({ jobId, viewerRole = 'customer', onUpdated }
 
         {/* ---------------- STATE 1: JOB IS COMPLETED ---------------- */}
         {isCompleted ? (
-          <div className="rounded-2xl bg-emerald-50/60 p-4 text-center dark:bg-emerald-950/30">
-            <HiOutlineCheckCircle className="mx-auto h-10 w-10 text-emerald-600 dark:text-emerald-400" />
-            <h5 className="mt-2 text-sm font-bold text-emerald-950 dark:text-emerald-200">
+          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-5 text-center dark:border-emerald-900/60 dark:bg-emerald-950/30">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300 shadow-sm">
+              <HiOutlineCheckCircle className="h-7 w-7" />
+            </div>
+            <h5 className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
               Work Completed & Payment Settled!
             </h5>
-            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300/80">
-              Total {formatINR(details.amount)} has been paid and credited to worker wallet.
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+              Contract payment of <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatINR(details.amount)}</strong> was confirmed via UPI QR and credited to worker wallet.
             </p>
-            {receiptData && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-surface-800 dark:text-slate-200"
               >
                 <HiOutlinePrinter className="h-4 w-4" />
                 Print Payment Slip
               </button>
-            )}
+            </div>
           </div>
         ) : (
           /* ---------------- STATE 2: IN PROGRESS / PENDING APPROVAL / QR READY ---------------- */

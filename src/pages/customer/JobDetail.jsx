@@ -1,334 +1,35 @@
-// // import { useEffect, useState } from 'react';
-// // import { useParams, useNavigate } from 'react-router-dom';
-// // import { useAppDispatch, useAppSelector } from '@/store/hooks';
-// // import { fetchJobById } from '@/store/slices/jobSlice';
-// // import { fetchJobApplications, acceptApplication, rejectApplication } from '@/store/slices/applicationSlice';
-// // import Card from '@/components/ui/Card';
-// // import Badge from '@/components/ui/Badge';
-// // import Button from '@/components/ui/Button';
-// // import Spinner from '@/components/ui/Spinner';
-// // import Avatar from '@/components/ui/Avatar';
-// // import ReviewModal from '@/components/shared/ReviewModal';
-// // import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineCurrencyDollar } from 'react-icons/hi';
-
-// // const statusVariant = {
-// //   Open: 'success', Assigned: 'primary', 'In-Progress': 'warning', Completed: 'gray', Cancelled: 'danger', Closed: 'gray',
-// // };
-
-// // const JobDetail = () => {
-// //   const { id } = useParams();
-// //   const navigate = useNavigate();
-// //   const dispatch = useAppDispatch();
-// //   const { currentJob: job, loading: jobLoading } = useAppSelector((state) => state.job);
-// //   const { applications, loading: appLoading } = useAppSelector((state) => state.application);
-// //   const { user } = useAppSelector((state) => state.auth);
-
-// //   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-
-// //   const isOwner = job?.customer?._id === user?._id || job?.customer === user?._id;
-
-// //   useEffect(() => {
-// //     dispatch(fetchJobById(id));
-// //     if (isOwner) dispatch(fetchJobApplications(id));
-// //   }, [dispatch, id, isOwner]);
-
-// //   if (jobLoading || !job) return <div className="flex justify-center py-20"><Spinner /></div>;
-
-// //   return (
-// //     <>
-// //       <div className="max-w-5xl mx-auto animate-fade-in">
-// //         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-surface-500 hover:text-surface-800 dark:hover:text-white mb-6 transition">
-// //           <HiOutlineArrowLeft className="w-5 h-5" /> Back to Jobs
-// //         </button>
-
-// //         <div className="grid lg:grid-cols-3 gap-8">
-// //           {/* Main Content */}
-// //           <div className="lg:col-span-2 space-y-6">
-// //             <Card className="dark:bg-surface-800 p-6">
-// //               <div className="flex items-center justify-between mb-4">
-// //                 <Badge variant={statusVariant[job.status]}>{job.status}</Badge>
-// //                 <span className="text-sm text-surface-400">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
-// //               </div>
-// //               <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-4">{job.title}</h1>
-// //               <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap leading-relaxed mb-6">{job.description}</p>
-              
-// //               {job.images?.length > 0 && (
-// //                 <div className="grid grid-cols-2 gap-4 mt-6">
-// //                   {job.images.map((img, idx) => (
-// //                     <img key={idx} src={img.url} alt={`Job ${idx+1}`} className="w-full h-40 object-cover rounded-xl border border-surface-200 dark:border-surface-700" />
-// //                   ))}
-// //                 </div>
-// //               )}
-// //             </Card>
-
-// //             {/* Applications Section */}
-// //             {isOwner && job.status === 'Open' && (
-// //               <div>
-// //                 <h2 className="text-xl font-bold text-surface-900 dark:text-white mb-4">Proposals ({applications.length})</h2>
-// //                 {appLoading ? <Spinner /> : applications.length > 0 ? (
-// //                   <div className="space-y-4">
-// //                     {applications.map(app => (
-// //                       <Card key={app._id} className="dark:bg-surface-800 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-// //                         <div className="flex items-center gap-3">
-// //                           <Avatar name={app.worker?.email} />
-// //                           <div>
-// //                             <p className="font-semibold text-surface-900 dark:text-white">{app.worker?.email}</p>
-// //                             <p className="text-sm text-surface-500 dark:text-surface-400 line-clamp-1">{app.proposalMessage}</p>
-// //                           </div>
-// //                         </div>
-// //                         <div className="flex items-center gap-4 w-full md:w-auto">
-// //                           <span className="text-primary-600 dark:text-primary-400 font-bold">₹{app.bidAmount}</span>
-// //                           <span className="text-xs text-surface-400">{app.estimatedCompletionTime}</span>
-// //                           {app.status === 'Pending' && (
-// //                             <div className="flex gap-2 ml-auto">
-// //                               <Button size="sm" onClick={() => dispatch(acceptApplication(app._id))}>Accept</Button>
-// //                               <Button size="sm" variant="outline" onClick={() => dispatch(rejectApplication(app._id))}>Reject</Button>
-// //                             </div>
-// //                           )}
-// //                           {app.status !== 'Pending' && <Badge variant={app.status === 'Accepted' ? 'success' : 'danger'}>{app.status}</Badge>}
-// //                         </div>
-// //                       </Card>
-// //                     ))}
-// //                   </div>
-// //                 ) : <p className="text-surface-500 dark:text-surface-400 text-center py-8">No proposals yet.</p>}
-// //               </div>
-// //             )}
-// //           </div>
-
-// //           {/* Sidebar */}
-// //           <div className="space-y-6">
-// //             <Card className="dark:bg-surface-800 p-6">
-// //               <div className="space-y-4">
-// //                 <div className="flex items-center justify-between pb-4 border-b border-surface-200 dark:border-surface-700">
-// //                   <span className="text-surface-500 dark:text-surface-400">Budget</span>
-// //                   <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">₹{job.budget}</span>
-// //                 </div>
-// //                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-// //                   <HiOutlineClock className="w-5 h-5 text-surface-400" />
-// //                   <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
-// //                 </div>
-// //                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-// //                   <HiOutlineLocationMarker className="w-5 h-5 text-surface-400" />
-// //                   <span>{job.location?.address || 'Remote'}</span>
-// //                 </div>
-// //                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-// //                   <HiOutlineCurrencyDollar className="w-5 h-5 text-surface-400" />
-// //                   <span>Type: {job.serviceType || 'local'}</span>
-// //                 </div>
-// //               </div>
-// //             </Card>
-            
-// //             {/* Review Section - Triggers the Modal */}
-// //             {isOwner && job.status === 'Completed' && (
-// //               <Card className="dark:bg-surface-800 p-6 border-l-4 border-yellow-500">
-// //                 <h3 className="font-bold text-surface-900 dark:text-white mb-2">Job Completed! 🎉</h3>
-// //                 <p className="text-sm text-surface-500 dark:text-surface-400 mb-4">Help the community by rating your worker.</p>
-// //                 <Button onClick={() => setIsReviewModalOpen(true)} className="w-full">Leave Review</Button>
-// //               </Card>
-// //             )}
-
-// //              {/* Review Section - Only shows if Job is Completed AND a worker was actually hired */}
-// //             {isOwner && job.status === 'Completed' && (job.hiredProvider?._id || job.hiredProvider) && (
-// //               <Card className="dark:bg-surface-800 p-6 border-l-4 border-yellow-500">
-// //                   <h3 className="font-bold text-surface-900 dark:text-white mb-2">Job Completed! 🎉</h3>
-// //                   <p className="text-sm text-surface-500 dark:text-surface-400 mb-4">Help the community by rating your worker.</p>
-// //                   <Button onClick={() => setIsReviewModalOpen(true)} className="w-full">Leave Review</Button>
-// //               </Card>
-// //               )}
-            
-// //             {/* Placeholder for Chat/Payment */}
-// //             <Card className="dark:bg-surface-800 p-6 bg-surface-50 dark:bg-surface-900 border-dashed border-2 border-surface-300 dark:border-surface-700 text-center">
-// //               <p className="text-surface-500 text-sm">Chat & Payment Status will appear here when job is assigned.</p>
-// //             </Card>
-// //           </div>
-// //         </div>
-// //       </div>
-
-// //       {/* Modal Component - Rendered outside the main layout grid but inside the fragment */}
-// //       <ReviewModal 
-// //         isOpen={isReviewModalOpen} 
-// //         onClose={() => setIsReviewModalOpen(false)} 
-// //         jobId={job._id} 
-// //         workerId={job.hiredProvider?._id || job.hiredProvider} 
-// //       />
-// //     </>
-// //   );
-// // };
-
-// // export default JobDetail;
-
-// import { useEffect, useState } from 'react';
-// import { useParams, useNavigate } from 'react-router-dom';
-// import { useAppDispatch, useAppSelector } from '@/store/hooks';
-// import { fetchJobById } from '@/store/slices/jobSlice';
-// import { fetchJobApplications, acceptApplication, rejectApplication } from '@/store/slices/applicationSlice';
-// import Card from '@/components/ui/Card';
-// import Badge from '@/components/ui/Badge';
-// import Button from '@/components/ui/Button';
-// import Spinner from '@/components/ui/Spinner';
-// import Avatar from '@/components/ui/Avatar';
-// import ReviewModal from '@/components/shared/ReviewModal';
-// import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineCurrencyDollar } from 'react-icons/hi';
-
-// const statusVariant = {
-//   Open: 'success', Assigned: 'primary', 'In-Progress': 'warning', Completed: 'gray', Cancelled: 'danger', Closed: 'gray',
-// };
-
-// const JobDetail = () => {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const dispatch = useAppDispatch();
-//   const { currentJob: job, loading: jobLoading } = useAppSelector((state) => state.job);
-//   const { applications, loading: appLoading } = useAppSelector((state) => state.application);
-//   const { user } = useAppSelector((state) => state.auth);
-
-//   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-
-//   const isOwner = job?.customer?._id === user?._id || job?.customer === user?._id;
-
-//   useEffect(() => {
-//     dispatch(fetchJobById(id));
-//     if (isOwner) dispatch(fetchJobApplications(id));
-//   }, [dispatch, id, isOwner]);
-
-//   if (jobLoading || !job) return <div className="flex justify-center py-20"><Spinner /></div>;
-
-//   return (
-//     <>
-//       <div className="max-w-5xl mx-auto animate-fade-in">
-//         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-surface-500 hover:text-surface-800 dark:hover:text-white mb-6 transition">
-//           <HiOutlineArrowLeft className="w-5 h-5" /> Back to Jobs
-//         </button>
-
-//         <div className="grid lg:grid-cols-3 gap-8">
-//           {/* Main Content */}
-//           <div className="lg:col-span-2 space-y-6">
-//             <Card className="dark:bg-surface-800 p-6">
-//               <div className="flex items-center justify-between mb-4">
-//                 <Badge variant={statusVariant[job.status]}>{job.status}</Badge>
-//                 <span className="text-sm text-surface-400">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
-//               </div>
-//               <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-4">{job.title}</h1>
-//               <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap leading-relaxed mb-6">{job.description}</p>
-              
-//               {job.images?.length > 0 && (
-//                 <div className="grid grid-cols-2 gap-4 mt-6">
-//                   {job.images.map((img, idx) => (
-//                     <img key={idx} src={img.url} alt={`Job ${idx+1}`} className="w-full h-40 object-cover rounded-xl border border-surface-200 dark:border-surface-700" />
-//                   ))}
-//                 </div>
-//               )}
-//             </Card>
-
-//             {/* Applications Section */}
-//             {isOwner && job.status === 'Open' && (
-//               <div>
-//                 <h2 className="text-xl font-bold text-surface-900 dark:text-white mb-4">Proposals ({applications.length})</h2>
-//                 {appLoading ? <Spinner /> : applications.length > 0 ? (
-//                   <div className="space-y-4">
-//                     {applications.map(app => (
-//                       <Card key={app._id} className="dark:bg-surface-800 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-//                         <div className="flex items-center gap-3">
-//                           <Avatar name={app.worker?.email} />
-//                           <div>
-//                             <p className="font-semibold text-surface-900 dark:text-white">{app.worker?.email}</p>
-//                             <p className="text-sm text-surface-500 dark:text-surface-400 line-clamp-1">{app.proposalMessage}</p>
-//                           </div>
-//                         </div>
-//                         <div className="flex items-center gap-4 w-full md:w-auto">
-//                           <span className="text-primary-600 dark:text-primary-400 font-bold">₹{app.bidAmount}</span>
-//                           <span className="text-xs text-surface-400">{app.estimatedCompletionTime}</span>
-//                           {app.status === 'Pending' && (
-//                             <div className="flex gap-2 ml-auto">
-//                               <Button size="sm" onClick={async () => {
-//                                 const result = await dispatch(acceptApplication(app._id));
-//                                 if (acceptApplication.fulfilled.match(result)) {
-//                                   dispatch(fetchJobById(id)); // Refetch job to update status to 'Assigned'
-//                                 }
-//                               }}>Accept</Button>
-//                               <Button size="sm" variant="outline" onClick={() => dispatch(rejectApplication(app._id))}>Reject</Button>
-//                             </div>
-//                           )}
-//                           {app.status !== 'Pending' && <Badge variant={app.status === 'Accepted' ? 'success' : 'danger'}>{app.status}</Badge>}
-//                         </div>
-//                       </Card>
-//                     ))}
-//                   </div>
-//                 ) : <p className="text-surface-500 dark:text-surface-400 text-center py-8">No proposals yet.</p>}
-//               </div>
-//             )}
-//           </div>
-
-//           {/* Sidebar */}
-//           <div className="space-y-6">
-//             <Card className="dark:bg-surface-800 p-6">
-//               <div className="space-y-4">
-//                 <div className="flex items-center justify-between pb-4 border-b border-surface-200 dark:border-surface-700">
-//                   <span className="text-surface-500 dark:text-surface-400">Budget</span>
-//                   <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">₹{job.budget}</span>
-//                 </div>
-//                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-//                   <HiOutlineClock className="w-5 h-5 text-surface-400" />
-//                   <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
-//                 </div>
-//                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-//                   <HiOutlineLocationMarker className="w-5 h-5 text-surface-400" />
-//                   <span>{job.location?.address || 'Remote'}</span>
-//                 </div>
-//                 <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-//                   <HiOutlineCurrencyDollar className="w-5 h-5 text-surface-400" />
-//                   <span>Type: {job.serviceType || 'local'}</span>
-//                 </div>
-//               </div>
-//             </Card>
-            
-//             {/* FIXED: Removed duplicate. Only shows if Job is Completed AND a worker was actually hired */}
-//             {isOwner && job.status === 'Completed' && (job.hiredProvider?._id || job.hiredProvider) && (
-//               <Card className="dark:bg-surface-800 p-6 border-l-4 border-yellow-500">
-//                   <h3 className="font-bold text-surface-900 dark:text-white mb-2">Job Completed! 🎉</h3>
-//                   <p className="text-sm text-surface-500 dark:text-surface-400 mb-4">Help the community by rating your worker.</p>
-//                   <Button onClick={() => setIsReviewModalOpen(true)} className="w-full">Leave Review</Button>
-//               </Card>
-//             )}
-            
-//             {/* Placeholder for Chat/Payment */}
-//             <Card className="dark:bg-surface-800 p-6 bg-surface-50 dark:bg-surface-900 border-dashed border-2 border-surface-300 dark:border-surface-700 text-center">
-//               <p className="text-surface-500 text-sm">Chat & Payment Status will appear here when job is assigned.</p>
-//             </Card>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Modal Component */}
-//       <ReviewModal 
-//         isOpen={isReviewModalOpen} 
-//         onClose={() => setIsReviewModalOpen(false)} 
-//         jobId={job._id} 
-//         workerId={job.hiredProvider?._id || job.hiredProvider} 
-//       />
-//     </>
-//   );
-// };
-
-// export default JobDetail;
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchJobById } from '@/store/slices/jobSlice';
-import { fetchJobApplications, acceptApplication, rejectApplication, clearApplications } from '@/store/slices/applicationSlice';
+import {
+  fetchJobApplications,
+  acceptApplication,
+  rejectApplication,
+  clearApplications,
+} from '@/store/slices/applicationSlice';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
-import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
 import WorkCompletionPaymentCard from '@/components/shared/WorkCompletionPaymentCard';
-import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineBriefcase } from 'react-icons/hi';
-
-const statusVariant = {
-  Open: 'success', Assigned: 'primary', 'In-Progress': 'warning', Completed: 'gray', Cancelled: 'danger', Closed: 'gray',
-};
+import {
+  HiOutlineArrowLeft,
+  HiOutlineClock,
+  HiOutlineLocationMarker,
+  HiOutlineBriefcase,
+  HiOutlineChatAlt,
+  HiOutlineTag,
+  HiOutlineShieldCheck,
+  HiOutlineCheckCircle,
+  HiOutlinePhone,
+  HiOutlineMail,
+  HiOutlineCheck,
+  HiOutlineX,
+  HiOutlineExternalLink,
+} from 'react-icons/hi';
 
 const CustomerJobDetail = () => {
   const { id } = useParams();
@@ -349,7 +50,6 @@ const CustomerJobDetail = () => {
     return () => dispatch(clearApplications());
   }, [dispatch, id]);
 
-  // Fetch applications ONLY if the job is loaded and the user is the owner
   useEffect(() => {
     if (isOwner && String(job?._id) === id) {
       dispatch(fetchJobApplications(id));
@@ -370,161 +70,386 @@ const CustomerJobDetail = () => {
     setActionLoadingId(null);
   };
 
-  if (jobLoading || !job) return <div className="flex justify-center py-20"><Spinner /></div>;
+  if (jobLoading || !job) {
+    return (
+      <div className="flex justify-center py-24">
+        <Spinner />
+      </div>
+    );
+  }
+
+  // Find accepted application if any
+  const acceptedApp = applications.find((a) => a.status === 'Accepted');
+  const hiredWorker = job.hiredProvider || acceptedApp?.worker;
+  const agreedAmount = acceptedApp?.bidAmount || job.paidAmount || job.budget;
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-surface-500 hover:text-surface-800 dark:hover:text-white mb-6 transition">
-        <HiOutlineArrowLeft className="w-5 h-5" /> Back to Jobs
-      </button>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 animate-fade-in space-y-6">
+      {/* Top Back Navigation */}
+      <div>
+        <Link
+          to="/customer/jobs"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition"
+        >
+          <HiOutlineArrowLeft className="w-4 h-4" /> Back to My Jobs
+        </Link>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="dark:bg-surface-800 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Badge variant={statusVariant[job.status]}>{job.status}</Badge>
-              <span className="text-sm text-surface-400">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+      {/* Hero Header Card */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5 mb-2.5">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                  job.status === 'Open'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : job.status === 'Completed'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                }`}
+              >
+                <span className="h-2 w-2 rounded-full bg-current animate-pulse" />
+                {job.status === 'Open'
+                  ? 'Open for Proposals'
+                  : job.status === 'Completed'
+                  ? 'Completed & Settled'
+                  : job.status === 'Assigned'
+                  ? 'Worker Hired'
+                  : 'In Progress'}
+              </span>
+
+              {job.category && (
+                <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <HiOutlineTag className="h-3.5 w-3.5 text-slate-400" />
+                  {job.category}
+                </span>
+              )}
+
+              <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                {job.serviceType === 'digital' ? '🌐 Digital Service' : '📍 Local Service'}
+              </span>
+
+              <span className="text-xs text-slate-400">
+                Posted on{' '}
+                {new Date(job.createdAt).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
             </div>
-            <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-4">{job.title}</h1>
-            <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap leading-relaxed mb-6">{job.description}</p>
-            
-            {job.images?.length > 0 && (
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                {job.images.map((img, idx) => (
-                  <img key={idx} src={img.url} alt={`Job ${idx+1}`} className="w-full h-40 object-cover rounded-xl border border-surface-200 dark:border-surface-700" />
-                ))}
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {job.title}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {hiredWorker && (
+              <Link to="/customer/chat">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"
+                >
+                  <HiOutlineChatAlt className="w-4 h-4" /> Message Worker
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* 4-Column Quick Metrics Banner */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-5">
+          <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Agreed Amount</span>
+            <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">
+              ₹{Number(agreedAmount || 0).toLocaleString('en-IN')}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Service Location</span>
+            <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+              {job.location?.address || 'Remote / Local'}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Deadline</span>
+            <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200">
+              {job.deadline
+                ? new Date(job.deadline).toLocaleDateString('en-IN', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : 'Flexible'}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-surface-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hired Specialist</span>
+            <p className="mt-1 text-sm font-bold text-indigo-600 dark:text-indigo-400 truncate">
+              {hiredWorker ? hiredWorker.fullName || hiredWorker.email?.split('@')[0] : 'None (Accepting Proposals)'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main 2-Column Balanced Grid */}
+      <div className="grid lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (Job Details + Hired Worker Profile / Proposals) */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Card 1: Job Description */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+              <HiOutlineBriefcase className="h-5 w-5 text-indigo-600" />
+              Project Overview & Scope
+            </h2>
+            <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+              {job.description}
+            </p>
+
+            {job.images && job.images.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                  Attached Photos ({job.images.length})
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {job.images.map((img, idx) => (
+                    <a
+                      key={idx}
+                      href={img.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 aspect-video bg-slate-100 dark:bg-slate-800 block"
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Attachment ${idx + 1}`}
+                        className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+                      />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
-          </Card>
+          </div>
 
-          {/* Applications Section (CUSTOMER ONLY) */}
-          {isOwner && (job.status === 'Open' || job.status === 'Assigned' || job.status === 'In-Progress' || job.status === 'Completed') && (
-            <div>
-              <h2 className="text-xl font-bold text-surface-900 dark:text-white mb-4">
-                {job.status === 'Open' ? `Proposals (${applications.length})` : 'Assigned Worker & Contract Details'}
-              </h2>
-              
-              {appLoading ? <Spinner /> : applications.length > 0 ? (
-                <div className="space-y-4">
-                  {actionError && (
-                    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                      {actionError}
-                    </div>
+          {/* Card 2: Hired Worker Profile OR Proposals List */}
+          {hiredWorker ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+                    <HiOutlineCheckCircle className="h-4 w-4" />
+                  </span>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                    Assigned Service Professional
+                  </h3>
+                </div>
+                <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  Hired Provider
+                </span>
+              </div>
+
+              <div className="mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <Avatar
+                    src={hiredWorker.avatar?.url}
+                    name={hiredWorker.fullName || hiredWorker.email}
+                    size="lg"
+                  />
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                      {hiredWorker.fullName || 'Service Professional'}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                      <HiOutlineMail className="h-3.5 w-3.5 text-slate-400" /> {hiredWorker.email}
+                    </p>
+                    {hiredWorker.phone && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <HiOutlinePhone className="h-3.5 w-3.5 text-slate-400" /> {hiredWorker.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 px-4 py-2 text-right dark:bg-surface-800 border border-slate-100 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Agreed Bid</span>
+                  <p className="text-xl font-black text-indigo-600 dark:text-indigo-400">
+                    ₹{agreedAmount}
+                  </p>
+                  {acceptedApp?.estimatedCompletionTime && (
+                    <p className="text-[11px] text-slate-400 mt-0.5">Time: {acceptedApp.estimatedCompletionTime}</p>
                   )}
-                  {applications.map(app => {
-                    const isAccepted = app.status === 'Accepted';
-                    return (
-                      <Card
-                        key={app._id}
-                        className={`dark:bg-surface-800 p-5 border-l-4 transition-all ${
-                          isAccepted
-                            ? 'border-l-indigo-600 ring-2 ring-indigo-500/20 shadow-medium'
-                            : 'border-l-surface-300 dark:border-l-surface-600 hover:shadow-medium'
-                        }`}
-                      >
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar name={app.worker?.fullName || app.worker?.email || 'Worker'} />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-semibold text-surface-900 dark:text-white">
-                                  {app.worker?.fullName || app.worker?.email?.split('@')[0] || 'Worker'}
-                                </p>
-                                {isAccepted && (
-                                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300">
-                                    Hired Provider
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-surface-400">{app.worker?.email}</p>
-                              <p className="text-sm text-surface-500 dark:text-surface-400 line-clamp-1 mt-1">
-                                {app.proposalMessage}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 w-full md:w-auto">
-                            <span className="text-primary-600 dark:text-primary-400 font-bold text-lg">₹{app.bidAmount}</span>
-                            <span className="text-xs text-surface-400">{app.estimatedCompletionTime}</span>
-                            
-                            {app.status === 'Pending' && (
-                              <div className="flex gap-2 ml-auto">
-                                <Button
-                                  size="sm"
-                                  isLoading={actionLoadingId === app._id}
-                                  disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
-                                  onClick={() => handleApplicationAction(acceptApplication, app._id)}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={Boolean(actionLoadingId)}
-                                  onClick={() => handleApplicationAction(rejectApplication, app._id)}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
-                            
-                            {app.status !== 'Pending' && !isAccepted && (
-                              <Badge variant={app.status === 'Accepted' ? 'success' : 'danger'}>{app.status}</Badge>
-                            )}
+                </div>
+              </div>
+
+              {acceptedApp?.proposalMessage && (
+                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">Original Proposal Note: </span>
+                  "{acceptedApp.proposalMessage}"
+                </div>
+              )}
+
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <Link to="/customer/chat">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300">
+                    <HiOutlineChatAlt className="w-4 h-4" /> Message {hiredWorker.fullName || 'Worker'}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-4">
+                Received Proposals ({applications.length})
+              </h3>
+              {actionError && (
+                <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {actionError}
+                </div>
+              )}
+              {appLoading ? (
+                <div className="py-8 flex justify-center">
+                  <Spinner />
+                </div>
+              ) : applications.length > 0 ? (
+                <div className="space-y-3">
+                  {applications.map((app) => (
+                    <div
+                      key={app._id}
+                      className="rounded-xl border border-slate-200 p-4 hover:shadow-sm transition dark:border-slate-700"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={app.worker?.fullName || app.worker?.email} />
+                          <div>
+                            <p className="font-bold text-sm text-slate-900 dark:text-white">
+                              {app.worker?.fullName || app.worker?.email}
+                            </p>
+                            <p className="text-xs text-slate-500 line-clamp-1">{app.proposalMessage}</p>
+                            <span className="text-[11px] text-slate-400 mt-0.5 block">
+                              Timeline: {app.estimatedCompletionTime}
+                            </span>
                           </div>
                         </div>
-
-                        {/* WORKER COMPLETION & QR PAYMENT FLOW ON WORKER CARD */}
-                        {isAccepted && (
-                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <WorkCompletionPaymentCard
-                              jobId={id}
-                              viewerRole="customer"
-                              onUpdated={() => dispatch(fetchJobById(id))}
-                            />
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
+                        <div className="flex items-center sm:flex-col items-end gap-2">
+                          <span className="text-base font-bold text-primary-600">₹{app.bidAmount}</span>
+                          {app.status === 'Pending' && (
+                            <div className="flex gap-1.5">
+                              <Button
+                                size="xs"
+                                isLoading={actionLoadingId === app._id}
+                                disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
+                                onClick={() => handleApplicationAction(acceptApplication, app._id)}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                disabled={Boolean(actionLoadingId)}
+                                onClick={() => handleApplicationAction(rejectApplication, app._id)}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <EmptyState icon="📭" title="No proposals yet" description="Workers haven't applied to this job yet. Check back soon!" />
+                <EmptyState
+                  icon="📭"
+                  title="No proposals yet"
+                  description="Workers haven't applied to this job yet. Check back soon!"
+                />
               )}
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card className="dark:bg-surface-800 p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-4 border-b border-surface-200 dark:border-surface-700">
-                <span className="text-surface-500 dark:text-surface-400">Budget</span>
-                <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">₹{job.budget}</span>
-              </div>
-              <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-                <HiOutlineClock className="w-5 h-5 text-surface-400" />
-                <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-                <HiOutlineLocationMarker className="w-5 h-5 text-surface-400" />
-                <span>{job.location?.address || 'Remote'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-surface-600 dark:text-surface-300">
-                <HiOutlineBriefcase className="w-5 h-5 text-surface-400" />
-                <span>Type: {job.serviceType || 'local'}</span>
-              </div>
-            </div>
-          </Card>
-          {isOwner && job.hiredProvider && applications.length === 0 && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
+        {/* Right Column (Settlement, QR Code & Safe Payment Guarantee) */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Work Completion & QR Payment Control Card */}
+          {['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
             <WorkCompletionPaymentCard
               jobId={id}
               viewerRole="customer"
               onUpdated={() => dispatch(fetchJobById(id))}
             />
           )}
+
+          {/* Fallback budget info card if job is Open */}
+          {job.status === 'Open' && (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
+                Listing Information
+              </h3>
+              <div className="space-y-3.5 text-sm">
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-500">Proposed Budget</span>
+                  <span className="text-lg font-bold text-slate-900 dark:text-white">₹{job.budget}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-500">Service Category</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{job.category}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-500">Target Date</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {job.deadline ? new Date(job.deadline).toLocaleDateString() : 'Flexible'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Location</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {job.location?.address || 'Remote'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Trust & Guarantee Information Card */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-surface-900">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+              <HiOutlineShieldCheck className="h-5 w-5 text-emerald-500" />
+              SkillBridge Escrow Protection
+            </h4>
+            <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  ✓
+                </span>
+                <span>
+                  <strong>Safe Verification:</strong> You only pay when the work is done and verified by you.
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  ✓
+                </span>
+                <span>
+                  <strong>Dynamic QR Code:</strong> Scans instantly with Google Pay, PhonePe, Paytm, or BHIM.
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  ✓
+                </span>
+                <span>
+                  <strong>Direct Payout:</strong> Worker receives funds in their verified wallet with full receipts.
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
