@@ -1,22 +1,36 @@
+import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { syncAuthRole } from '@/store/slices/authSlice';
+import { getAuthForRole } from '@/utils/authStorage';
 
 const CustomerRoute = ({ children }) => {
   const location = useLocation();
-  const { user, accessToken } = useAppSelector((state) => state.auth); // FIX: accessToken
+  const dispatch = useAppDispatch();
+  const { user, accessToken } = useAppSelector((state) => state.auth);
 
-  if (!accessToken || !user) {
+  // If another tab logged in as worker/admin, but customer session exists in storage, sync Redux!
+  const customerAuth = getAuthForRole('customer');
+
+  useEffect(() => {
+    if (user?.role !== 'customer' && customerAuth) {
+      dispatch(syncAuthRole('customer'));
+    }
+  }, [user?.role, customerAuth, dispatch]);
+
+  const effectiveUser = user?.role === 'customer' ? user : (customerAuth ? customerAuth.user : user);
+  const effectiveToken = user?.role === 'customer' ? accessToken : (customerAuth ? customerAuth.token : accessToken);
+
+  if (!effectiveToken || !effectiveUser) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  if (user.isBlocked) {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('skillbridge_user');
+  if (effectiveUser.isBlocked) {
     return <Navigate to="/auth/login?blocked=true" replace />;
   }
 
-  if (user.role === 'provider') return <Navigate to="/worker/home" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
+  if (!customerAuth && effectiveUser.role === 'provider') return <Navigate to="/worker/home" replace />;
+  if (!customerAuth && effectiveUser.role === 'admin') return <Navigate to="/admin" replace />;
 
   return children;
 };

@@ -1,23 +1,28 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '@/api/axiosInstance';
+import {
+  getActiveAuth,
+  saveAuthForRole,
+  clearAuthForRole,
+  getAuthForRole,
+  getRoleFromPath,
+} from '@/utils/authStorage';
 
-// Load initial auth state from localStorage safely
+// Load initial auth state based on the current URL path or active role
 const loadAuthState = () => {
   try {
-    const accessToken = localStorage.getItem('accessToken');
-    const user = localStorage.getItem('skillbridge_user');
-    if (accessToken && user) {
+    const { token, user } = getActiveAuth();
+    if (token && user) {
       return {
-        user: JSON.parse(user),
-        accessToken,
+        user,
+        accessToken: token,
         isAuthenticated: true,
         loading: false,
         error: null,
       };
     }
   } catch (e) {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('skillbridge_user');
+    console.error('Failed to initialize auth state:', e);
   }
   return { user: null, accessToken: null, isAuthenticated: false, loading: false, error: null };
 };
@@ -48,72 +53,89 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk('auth/logout', async () => {
-  await axiosInstance.post('/auth/logout');
+export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
+  try {
+    await axiosInstance.post('/auth/logout');
+  } catch (e) {
+    console.warn('Logout API call failed, continuing client cleanup:', e);
+  }
 });
-// export const { clearAuthError, updateLocalUser } = authSlice.actions;
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearAuthError: (state) => { state.error = null; },
-    // Add this reducer to update the user in real-time after profile edits
-  // updateLocalUser: (state, action) => {
-  //   state.user = action.payload;
-  //   localStorage.setItem('skillbridge_user', JSON.stringify(action.payload));
-  // },
-   // Add this reducer to update the user in real-time after profile edits
-  updateLocalUser: (state, action) => {
-    // Merge the updated fields into the existing user state
-    state.user = { ...state.user, ...action.payload };
-    // Update localStorage so it persists on refresh
-    localStorage.setItem('skillbridge_user', JSON.stringify(state.user));
-  },
+    clearAuthError: (state) => {
+      state.error = null;
+    },
+    // Synchronize Redux active session to match the current portal role
+    syncAuthRole: (state, action) => {
+      const role = action.payload || getRoleFromPath(window.location.pathname);
+      if (!role) return;
+      const roleAuth = getAuthForRole(role);
+      if (roleAuth) {
+        state.user = roleAuth.user;
+        state.accessToken = roleAuth.token;
+        state.isAuthenticated = true;
+      }
+    },
+    updateLocalUser: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+      saveAuthForRole(state.user, state.accessToken);
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
-        
-        localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('skillbridge_user', JSON.stringify(action.payload.user));
+
+        saveAuthForRole(action.payload.user, action.payload.accessToken);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
-        
-        localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('skillbridge_user', JSON.stringify(action.payload.user));
+
+        saveAuthForRole(action.payload.user, action.payload.accessToken);
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       .addCase(logoutUser.fulfilled, (state) => {
+        const currentRole = state.user?.role || getRoleFromPath(window.location.pathname);
+        if (currentRole) {
+          clearAuthForRole(currentRole);
+        } else {
+          clearAuthForRole('customer');
+          clearAuthForRole('provider');
+          clearAuthForRole('admin');
+        }
+
         state.user = null;
         state.accessToken = null;
         state.isAuthenticated = false;
         state.loading = false;
         state.error = null;
-        
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('skillbridge_user');
       });
   },
 });
 
-// export const { clearAuthError } = authSlice.actions;
-export const { clearAuthError, updateLocalUser } = authSlice.actions;
+export const { clearAuthError, updateLocalUser, syncAuthRole } = authSlice.actions;
 export default authSlice.reducer;
