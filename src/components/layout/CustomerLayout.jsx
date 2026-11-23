@@ -9,7 +9,6 @@ import { SocketProvider } from '@/context/SocketContext';
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/customer/home' },
   { icon: HiOutlineBriefcase, label: 'My jobs', path: '/customer/jobs' },
-  { icon: HiOutlineCreditCard, label: 'Wallet', path: '/customer/wallet' },
   { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
 ];
 
@@ -67,7 +66,7 @@ const CustomerLayout = () => {
           </header>
           <main className="portal-main mx-auto w-full max-w-[1680px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-8 lg:px-10 lg:pb-10"> <Outlet /> </main>
         </div>
-        <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
+        <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-3 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
           {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}><Icon className="h-5 w-5"/><span>{label}</span></NavLink>)}
         </nav>
       </div>

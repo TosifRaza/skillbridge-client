@@ -777,7 +777,7 @@ export const appRouter = createBrowserRouter([
     { path: '/customer/jobs/post', element: <PostJob /> },
     { path: '/customer/jobs/:id', element: <CustomerJobDetail /> },
     { path: '/customer/profile', element: <CustomerProfile /> },
-    { path: '/customer/wallet', element: <CustomerWallet /> },
+    { path: '/customer/wallet', element: <Navigate to="/customer/jobs" replace /> },
     { path: '/customer/chat', element: <CustomerChat /> },
   ]},
 
