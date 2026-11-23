@@ -15,7 +15,6 @@ import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
 import {
-  HiOutlineArrowLeft,
   HiOutlineClock,
   HiOutlineLocationMarker,
   HiOutlineChatAlt,
@@ -142,17 +141,7 @@ const CustomerJobDetail = () => {
   const customerApproved = Boolean(job.customerApproved);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-4 animate-fade-in space-y-4">
-      {/* Back Button */}
-      <div>
-        <Link
-          to="/customer/jobs"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition"
-        >
-          <HiOutlineArrowLeft className="w-4 h-4" /> Back to My Jobs
-        </Link>
-      </div>
-
+    <div className="w-full animate-fade-in">
       {/* Main Single Clean Container */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-surface-900">
         {/* Header Section */}
