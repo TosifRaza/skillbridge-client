@@ -3,14 +3,14 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineUserCircle, HiOutlineLogout, HiOutlineSparkles } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard } from 'react-icons/hi';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/worker/home' },
   { icon: HiOutlineSearch, label: 'Find work', path: '/worker/jobs' },
   { icon: HiOutlineClipboardList, label: 'My contracts', path: '/worker/contracts' },
+  { icon: HiOutlineCreditCard, label: 'Wallet', path: '/worker/wallet' },
   { icon: HiOutlineChatAlt, label: 'Messages', path: '/worker/chat' },
-  { icon: HiOutlineUserCircle, label: 'Profile', path: '/worker/profile' },
 ];
 
 const WorkerLayout = () => {
@@ -45,7 +45,7 @@ const WorkerLayout = () => {
         <header className="portal-topbar sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-10">
           <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark h-9 w-9">S</span><span className="font-bold tracking-tight">SkillBridge</span></Link>
           <div className="hidden lg:block"><p className="text-xs font-medium text-slate-400">WORKER WORKSPACE</p><p className="mt-0.5 text-sm font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
-          <div className="ml-auto flex items-center gap-3 sm:gap-5"><DarkModeToggle /><div className="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block"/><div className="flex items-center gap-2.5"><Avatar name={user?.fullName || user?.email} size="sm"/><div className="hidden sm:block"><p className="max-w-48 truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{user?.fullName || 'Worker'}</p><p className="max-w-48 truncate text-[11px] text-slate-400">{user?.email}</p></div></div></div>
+          <div className="ml-auto flex items-center gap-3 sm:gap-5"><DarkModeToggle /><div className="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block"/><Link to="/worker/profile" title="Open profile" className="group flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-indigo-50 dark:hover:bg-indigo-950/40"><Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm"/><div className="hidden sm:block"><p className="max-w-48 truncate text-xs font-semibold text-slate-800 transition group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{user?.fullName || 'Worker'}</p><p className="max-w-48 truncate text-[11px] text-slate-400">{user?.email}</p></div></Link></div>
         </header>
         <main className="portal-main mx-auto w-full max-w-[1680px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-8 lg:px-10 lg:pb-10"><Outlet /></main>
       </div>

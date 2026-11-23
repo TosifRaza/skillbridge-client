@@ -60,7 +60,7 @@ const CustomerServices = () => {
                     <p className="text-surface-500 dark:text-surface-400 text-sm mb-6">{service.shortDesc}</p>
                     <div className="flex justify-between items-center">
                       <span className="text-primary-600 dark:text-primary-400 font-bold">{service.startingPrice}</span>
-                      <Link to="/customer/jobs/post"><Button size="sm">Hire Now</Button></Link>
+                      <Link to={`/customer/jobs/post?category=${encodeURIComponent(service.name)}`}><Button size="sm">Book Service</Button></Link>
                     </div>
                   </div>
                 </Card>

@@ -8,6 +8,7 @@ import notificationReducer from './slices/notificationSlice';
 import locationReducer from './slices/locationSlice';
 import customerReducer from './slices/customerSlice'; // <-- ADDED
 import adminReducer from './slices/adminSlice';
+import walletReducer from './slices/walletSlice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -19,5 +20,6 @@ export const store = configureStore({
     location: locationReducer,
     customer: customerReducer, // <-- ADDED
     admin: adminReducer,
+    wallet: walletReducer,
   },
 });

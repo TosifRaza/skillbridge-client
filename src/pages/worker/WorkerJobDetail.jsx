@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchJobById } from '@/store/slices/jobSlice';
 import ApplyModal from '@/components/shared/ApplyModal';
@@ -8,7 +8,8 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
-import { HiOutlineArrowLeft, HiOutlineLocationMarker, HiOutlineClock, HiOutlineCurrencyDollar, HiOutlineBriefcase } from 'react-icons/hi';
+import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import { HiOutlineArrowLeft, HiOutlineLocationMarker, HiOutlineClock, HiOutlineBriefcase } from 'react-icons/hi';
 
 const statusVariant = {
   Open: 'success', Assigned: 'primary', 'In-Progress': 'warning', Completed: 'gray', Cancelled: 'danger', Closed: 'gray',
@@ -28,8 +29,6 @@ const WorkerJobDetail = () => {
 
   useEffect(() => {
     let active = true;
-    setApplicationStatus({ loading: true, applied: false, status: null });
-
     axiosInstance.get(`/applications/status/${id}`)
       .then(({ data }) => {
         if (active) setApplicationStatus({ loading: false, ...data.data });
@@ -92,6 +91,14 @@ const WorkerJobDetail = () => {
               </div>
             </div>
           </Card>
+
+          {applicationStatus.status === 'Accepted' && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
+            <ContractPaymentPanel
+              jobId={id}
+              viewerRole="provider"
+              onUpdated={() => dispatch(fetchJobById(id))}
+            />
+          )}
 
           {/* Action Button */}
           {job.status === 'Open' && (

@@ -732,6 +732,7 @@ import CustomerMyJobs from '@/pages/customer/MyJobs';
 import CustomerJobDetail from '@/pages/customer/JobDetail';
 import CustomerProfile from '@/pages/customer/CustomerProfile';
 import CustomerChat from '@/pages/customer/CustomerChat'; // ONLY THIS ONE
+import CustomerWallet from '@/pages/customer/CustomerWallet';
 import PostJob from '@/pages/dashboard/PostJob'; 
 
 // Worker Pages
@@ -740,6 +741,7 @@ import BrowseJobs from '@/pages/worker/BrowseJobs';
 import WorkerJobDetail from '@/pages/worker/WorkerJobDetail';
 import MyContracts from '@/pages/worker/MyContracts';
 import WorkerProfile from '@/pages/worker/WorkerProfile';
+import WorkerWallet from '@/pages/worker/WorkerWallet';
 import WorkerChat from '@/pages/worker/WorkerChat'; // ONLY THIS ONE
 import AdminAnalytics from '@/pages/admin/AdminAnalytics';
 // Admin Pages (Temp)
@@ -775,6 +777,7 @@ export const appRouter = createBrowserRouter([
     { path: '/customer/jobs/post', element: <PostJob /> },
     { path: '/customer/jobs/:id', element: <CustomerJobDetail /> },
     { path: '/customer/profile', element: <CustomerProfile /> },
+    { path: '/customer/wallet', element: <CustomerWallet /> },
     { path: '/customer/chat', element: <CustomerChat /> },
   ]},
 
@@ -784,6 +787,7 @@ export const appRouter = createBrowserRouter([
     { path: '/worker/jobs', element: <BrowseJobs /> },
     { path: '/worker/jobs/:id', element: <WorkerJobDetail /> },
     { path: '/worker/contracts', element: <MyContracts /> },
+    { path: '/worker/wallet', element: <WorkerWallet /> },
     { path: '/worker/profile', element: <WorkerProfile /> },
     { path: '/worker/chat', element: <WorkerChat /> },
   ]},

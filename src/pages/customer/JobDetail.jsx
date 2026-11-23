@@ -322,7 +322,8 @@ import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
-import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineCurrencyDollar, HiOutlineBriefcase } from 'react-icons/hi';
+import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import { HiOutlineArrowLeft, HiOutlineClock, HiOutlineLocationMarker, HiOutlineBriefcase } from 'react-icons/hi';
 
 const statusVariant = {
   Open: 'success', Assigned: 'primary', 'In-Progress': 'warning', Completed: 'gray', Cancelled: 'danger', Closed: 'gray',
@@ -483,6 +484,13 @@ const CustomerJobDetail = () => {
               </div>
             </div>
           </Card>
+          {isOwner && job.hiredProvider && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && (
+            <ContractPaymentPanel
+              jobId={id}
+              viewerRole="customer"
+              onUpdated={() => dispatch(fetchJobById(id))}
+            />
+          )}
         </div>
       </div>
     </div>

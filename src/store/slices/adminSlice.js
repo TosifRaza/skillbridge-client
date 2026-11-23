@@ -32,6 +32,11 @@ export const rejectWorkerVerification = createAsyncThunk('admin/rejectWorker', a
   catch (err) { return rejectWithValue(err.response?.data?.message); }
 });
 
+export const connectWorkerPayoutAccount = createAsyncThunk('admin/connectWorkerPayoutAccount', async ({ id, linkedAccountId }, { rejectWithValue }) => {
+  try { const res = await axiosInstance.patch(`/admin/workers/${id}/payout-account`, { linkedAccountId }); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Could not connect payout account'); }
+});
+
 export const fetchAdminJobs = createAsyncThunk('admin/fetchJobs', async (params, { rejectWithValue }) => {
   try { const res = await axiosInstance.get('/admin/jobs', { params }); return res.data.data; } 
   catch (err) { return rejectWithValue(err.response?.data?.message); }
@@ -68,6 +73,7 @@ const adminSlice = createSlice({
       .addCase(unblockUser.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(verifyWorker.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(rejectWorkerVerification.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
+      .addCase(connectWorkerPayoutAccount.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? { ...u, ...action.payload } : u); })
       .addCase(fetchAdminJobs.fulfilled, (state, action) => { state.jobs = action.payload.jobs; state.totalJobs = action.payload.total; })
       .addCase(deleteJob.fulfilled, (state, action) => { state.jobs = state.jobs.filter(j => j._id !== action.payload); })
       .addCase(fetchReports.fulfilled, (state, action) => { state.reports = action.payload.reports; state.totalReports = action.payload.total; })

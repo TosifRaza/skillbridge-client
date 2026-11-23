@@ -156,12 +156,38 @@ export const createReview = createAsyncThunk(
   }
 );
 
+export const fetchWorkers = createAsyncThunk(
+  'customer/fetchWorkers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get('/users/workers');
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch workers');
+    }
+  }
+);
+
+export const fetchCustomerProposals = createAsyncThunk(
+  'customer/fetchCustomerProposals',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get('/applications/customer-proposals');
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch customer proposals');
+    }
+  }
+);
+
 const customerSlice = createSlice({
   name: 'customer',
   initialState: {
     viewedWorker: null,
     ratingDistribution: null,
     workerReviews: [],
+    workers: [],
+    proposals: [],
     loading: false,
     error: null,
   },
@@ -177,6 +203,12 @@ const customerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchWorkers.fulfilled, (state, action) => {
+        state.workers = action.payload || [];
+      })
+      .addCase(fetchCustomerProposals.fulfilled, (state, action) => {
+        state.proposals = action.payload || [];
+      })
       .addCase(fetchWorkerProfile.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchWorkerProfile.fulfilled, (state, action) => { state.loading = false; state.viewedWorker = action.payload; })
       .addCase(fetchWorkerProfile.rejected, (state, action) => { state.loading = false; state.error = action.payload; })

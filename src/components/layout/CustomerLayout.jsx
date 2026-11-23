@@ -3,14 +3,14 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineUserCircle, HiOutlineLogout, HiOutlinePlus } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineLogout, HiOutlinePlus, HiOutlineCreditCard } from 'react-icons/hi';
 import { SocketProvider } from '@/context/SocketContext';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/customer/home' },
   { icon: HiOutlineBriefcase, label: 'My jobs', path: '/customer/jobs' },
+  { icon: HiOutlineCreditCard, label: 'Wallet', path: '/customer/wallet' },
   { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
-  { icon: HiOutlineUserCircle, label: 'Profile', path: '/customer/profile' },
 ];
 
 const CustomerLayout = () => {
@@ -39,7 +39,10 @@ const CustomerLayout = () => {
           <div className="mx-5 mb-5 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/10 p-4">
             <div className="flex items-center gap-2 text-xs font-semibold text-indigo-100"><span className="h-2 w-2 rounded-full bg-emerald-400" />Your account is ready</div>
             <p className="mt-2 text-[11px] leading-4 text-slate-400">Post a job to connect with skilled professionals.</p>
-            <Link to="/customer/jobs/post" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-indigo-200"><HiOutlinePlus /> Post a job</Link>
+            <div className="mt-3 flex items-center justify-between">
+              <Link to="/customer/jobs/post" className="inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-indigo-200"><HiOutlinePlus /> Post a job</Link>
+              <Link to="/customer/profile" className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-200 hover:text-white">Profile <span aria-hidden="true">→</span></Link>
+            </div>
           </div>
           <div className="border-t border-white/10 p-4">
             <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"><HiOutlineLogout className="h-5 w-5" />Sign out</button>
@@ -50,7 +53,17 @@ const CustomerLayout = () => {
           <header className="portal-topbar sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-10">
             <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark h-9 w-9">S</span><span className="font-bold tracking-tight">SkillBridge</span></Link>
             <div className="hidden lg:block"><p className="text-xs font-medium text-slate-400">CUSTOMER WORKSPACE</p><p className="mt-0.5 text-sm font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
-            <div className="ml-auto flex items-center gap-3 sm:gap-5"><DarkModeToggle /><div className="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block" /><div className="flex items-center gap-2.5"><Avatar name={user?.fullName || user?.email} size="sm" /><div className="hidden sm:block"><p className="max-w-48 truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{user?.fullName || 'Customer'}</p><p className="max-w-48 truncate text-[11px] text-slate-400">{user?.email}</p></div></div></div>
+            <div className="ml-auto flex items-center gap-3 sm:gap-5">
+              <DarkModeToggle />
+              <div className="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block" />
+              <Link to="/customer/profile" title="Open profile" className="group flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-indigo-50 dark:hover:bg-indigo-950/40">
+                <Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" />
+                <div className="hidden sm:block">
+                  <p className="max-w-48 truncate text-xs font-semibold text-slate-800 transition group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{user?.fullName || 'Customer'}</p>
+                  <p className="max-w-48 truncate text-[11px] text-slate-400">{user?.email}</p>
+                </div>
+              </Link>
+            </div>
           </header>
           <main className="portal-main mx-auto w-full max-w-[1680px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-8 lg:px-10 lg:pb-10"> <Outlet /> </main>
         </div>

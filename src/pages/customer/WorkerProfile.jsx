@@ -64,6 +64,7 @@
 
 // NEW
 
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchWorkerProfile, fetchRatingDistribution, fetchWorkerReviews, clearViewedWorker } from '@/store/slices/customerSlice';
@@ -73,14 +74,15 @@ import Badge from '@/components/ui/Badge';
 import StarRating from '@/components/ui/StarRating';
 import RatingChart from '@/components/shared/RatingChart';
 import Spinner from '@/components/ui/Spinner';
+import DirectHireModal from '@/components/shared/DirectHireModal';
 import { HiOutlineArrowLeft, HiOutlineShieldCheck, HiOutlineLocationMarker } from 'react-icons/hi';
-import { useEffect } from 'react';
 
 const WorkerProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { viewedWorker, ratingDistribution, workerReviews, loading } = useAppSelector((state) => state.customer);
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -118,7 +120,13 @@ const WorkerProfile = () => {
                   <span className="flex items-center gap-1"><StarRating rating={viewedWorker.averageRating || 0} size="sm" /> ({viewedWorker.totalReviews || 0} reviews)</span>
                 </div>
               </div>
-              <Link to="/customer/jobs/post"><Button size="lg" className="shadow-glow">Hire Worker</Button></Link>
+              <Button
+                size="lg"
+                onClick={() => setIsHireModalOpen(true)}
+                className="gradient-primary shadow-glow font-bold text-white"
+              >
+                Hire Worker
+              </Button>
             </div>
           </Card>
 
@@ -177,6 +185,23 @@ const WorkerProfile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Direct Hire Modal */}
+      {viewedWorker && (
+        <DirectHireModal
+          isOpen={isHireModalOpen}
+          onClose={() => setIsHireModalOpen(false)}
+          provider={{
+            _id: viewedWorker._id,
+            name: viewedWorker.fullName || viewedWorker.email,
+            rating: viewedWorker.averageRating,
+            reviews: viewedWorker.totalReviews,
+            specialty: viewedWorker.skills?.join(', ') || 'Professional Service',
+            price: '₹500',
+            avatar: viewedWorker.avatar?.url,
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -368,7 +368,7 @@
 
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { createJob } from '@/store/slices/jobSlice';
 import Input from '@/components/ui/Input';
@@ -392,6 +392,12 @@ const steps = [
 const PostJob = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const matchedCategory = PHASE_1_SERVICES.find(
+    (s) => s.name.toLowerCase() === categoryParam?.toLowerCase()
+  )?.name;
+
   const { city } = useAppSelector((state) => state.location);
   const { loading, error } = useAppSelector((state) => state.job);
 
@@ -399,7 +405,7 @@ const PostJob = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: PHASE_1_SERVICES[0].name, // Default to first category
+    category: matchedCategory || PHASE_1_SERVICES[0].name, // Pre-select from URL if provided
     serviceType: 'local',
     budget: '',
     deadline: '',
@@ -468,8 +474,14 @@ const PostJob = () => {
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
-      <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-2">Post a New Job</h1>
-      <p className="text-surface-500 dark:text-surface-400 mb-8">Follow the steps to get the best bids from professionals.</p>
+      <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-2">
+        {matchedCategory ? `Book ${matchedCategory}` : 'Post a New Job'}
+      </h1>
+      <p className="text-surface-500 dark:text-surface-400 mb-8">
+        {matchedCategory
+          ? `Enter your project requirements to book top-rated ${matchedCategory} professionals.`
+          : 'Follow the steps to get the best bids from professionals.'}
+      </p>
 
       {/* Progress Bar */}
       <div className="flex items-center justify-between mb-10">
