@@ -9,7 +9,6 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
-import WorkCompletionPaymentCard from '@/components/shared/WorkCompletionPaymentCard';
 import {
   HiOutlineArrowLeft,
   HiOutlineLocationMarker,
@@ -188,15 +187,14 @@ const WorkerJobDetail = () => {
             {descriptionOpen && <p className="whitespace-pre-wrap pb-1 pl-[52px] pr-2 pt-2 text-[13px] leading-[1.55] text-slate-600 dark:text-slate-300">{job.description}</p>}
           </section>
 
-          {accepted && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && <div className="mt-6"><WorkCompletionPaymentCard jobId={id} viewerRole="provider" onUpdated={() => dispatch(fetchJobById(id))} /></div>}
         </Card>
 
         <aside className="space-y-5 lg:sticky lg:top-[110px]">
           <Card className="rounded-[20px] border-violet-100/90 bg-white/90 p-4 shadow-[0_12px_34px_rgba(63,45,119,.07)] backdrop-blur sm:p-5 dark:border-slate-700 dark:bg-surface-800">
-            <div className="flex items-center justify-between gap-3 border-b border-violet-100 pb-3 dark:border-slate-700">
+              <div className="flex items-center justify-between gap-3 border-b border-violet-100 pb-3 dark:border-slate-700">
               <div className="flex items-center gap-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><HiOutlineCreditCard className="h-5 w-5" /></span>
-                <span className="text-[16px] font-semibold text-slate-800 dark:text-slate-200">Budget</span>
+                <span className="text-[16px] font-semibold text-slate-800 dark:text-slate-200">Customer budget</span>
               </div>
               <span className="text-[28px] font-extrabold tracking-tight text-violet-700 dark:text-violet-300">{formatBudget(job.budget)}</span>
             </div>
@@ -214,6 +212,12 @@ const WorkerJobDetail = () => {
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[14px] font-medium text-slate-500 dark:text-slate-400">Type:</dt><dd className="text-[15px] font-semibold capitalize text-slate-800 dark:text-slate-100">{job.serviceType || 'local'}</dd></div>
               </div>
             </dl>
+            {accepted && (job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount) != null && (
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2.5 text-sm dark:bg-violet-950/30">
+                <span className="font-semibold text-violet-800 dark:text-violet-200">Agreed contract price</span>
+                <span className="font-extrabold text-violet-800 dark:text-violet-200">{formatBudget(job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount)}</span>
+              </div>
+            )}
           </Card>
 
           {job.status === 'Open' && applied ? (
@@ -244,6 +248,7 @@ const WorkerJobDetail = () => {
       {showApplyModal && (
         <ApplyModal
           jobId={id}
+          budget={job.budget}
           onClose={() => setShowApplyModal(false)}
           onApplied={() => setApplicationStatus({ loading: false, applied: true, status: 'Pending' })}
           onAlreadyApplied={() => { setApplicationStatus({ loading: false, applied: true, status: 'Pending' }); setShowApplyModal(false); }}

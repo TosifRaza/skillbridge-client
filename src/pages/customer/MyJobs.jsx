@@ -17,7 +17,6 @@ import {
   HiOutlineUsers,
   HiOutlineCheckCircle,
   HiOutlineArrowRight,
-  HiOutlineQrcode,
   HiOutlineTag,
   HiOutlineBriefcase,
   HiOutlineShieldCheck,
@@ -248,7 +247,7 @@ const MyJobs = () => {
                     )}
                   </div>
 
-                  {/* Work Completion Notice Banner (Customer Approval & QR Trigger) */}
+                  {/* Work completion update */}
                   {hasWorkSubmitted && (
                     <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 p-4 text-xs dark:border-indigo-900/80 dark:from-indigo-950/60 dark:via-purple-950/40 dark:to-slate-900 shadow-sm">
                       <div className="flex items-center gap-2.5">
@@ -268,7 +267,7 @@ const MyJobs = () => {
                         to={`/customer/jobs/${job._id}`}
                         className="shrink-0 rounded-xl gradient-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition hover:-translate-y-0.5"
                       >
-                        Review & Pay QR →
+                        Review contract & payment →
                       </Link>
                     </div>
                   )}
@@ -278,7 +277,7 @@ const MyJobs = () => {
                     <div className="text-xs text-slate-400">
                       {isCompleted ? (
                         <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                          <HiOutlineShieldCheck className="h-4 w-4" /> Paid ₹{job.paidAmount || job.budget} via UPI QR
+                          <HiOutlineShieldCheck className="h-4 w-4" /> {Number(job.paidAmount) > 0 ? `Paid ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(job.paidAmount))}` : 'Job completed'}
                         </span>
                       ) : (
                         <span>Job ID: #{job._id.slice(-6).toUpperCase()}</span>
@@ -324,7 +323,7 @@ const MyJobs = () => {
                       <Link to={`/customer/jobs/${job._id}`}>
                         {hasWorkSubmitted ? (
                           <Button size="sm" className="gradient-primary flex items-center gap-1.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20">
-                            <HiOutlineQrcode className="h-4 w-4" /> Verify & Pay QR →
+                            <HiOutlineBriefcase className="h-4 w-4" /> Review work & payment →
                           </Button>
                         ) : isOpen ? (
                           <Button size="sm" className="gradient-primary flex items-center gap-1.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20">

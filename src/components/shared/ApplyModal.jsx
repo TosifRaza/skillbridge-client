@@ -4,7 +4,7 @@ import { applyToJob } from '@/store/slices/applicationSlice';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
-const ApplyModal = ({ jobId, onClose, onApplied, onAlreadyApplied }) => {
+const ApplyModal = ({ jobId, budget, onClose, onApplied, onAlreadyApplied }) => {
   const dispatch = useAppDispatch();
   const [formData, setFormData] = useState({ proposalMessage: '', bidAmount: '', estimatedCompletionTime: '' });
   const [loading, setLoading] = useState(false);
@@ -45,9 +45,11 @@ const ApplyModal = ({ jobId, onClose, onApplied, onAlreadyApplied }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Your Bid ($)" name="bidAmount" type="number" value={formData.bidAmount} onChange={handleChange} placeholder="150" required />
+            <Input label="Your proposed price (₹)" name="bidAmount" type="number" min="1" step="0.01" value={formData.bidAmount} onChange={handleChange} placeholder="e.g. 499" required />
             <Input label="Est. Completion" name="estimatedCompletionTime" value={formData.estimatedCompletionTime} onChange={handleChange} placeholder="e.g. 2 days" required />
           </div>
+
+          {budget !== undefined && <p className="-mt-2 text-xs text-surface-500">Customer budget: <strong>₹{Number(budget).toLocaleString('en-IN')}</strong>. The customer will review your quoted price before accepting.</p>}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
