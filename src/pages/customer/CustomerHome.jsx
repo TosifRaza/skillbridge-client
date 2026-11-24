@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import SearchBar from '@/components/ui/SearchBar';
 import StarRating from '@/components/ui/StarRating';
 import DirectHireModal from '@/components/shared/DirectHireModal';
+import ServiceIcon from '@/components/ui/ServiceIcon';
 import { PHASE_1_SERVICES } from '@/constants/services';
 import {
   HiOutlineBriefcase,
@@ -160,10 +161,10 @@ const CustomerHome = () => {
   };
 
   const mobileServices = [
-    { id: 'house-cleaning', label: 'House Cleaning', emoji: '🧹' },
-    { id: 'moving-help', label: 'Moving Help', emoji: '📦' },
-    { id: 'gardening', label: 'Gardening', emoji: '🌿' },
-    { id: 'event-staffing', label: 'Event Staffing', emoji: '🎉' },
+    { id: 'house-cleaning', label: 'House Cleaning' },
+    { id: 'moving-help', label: 'Moving Help' },
+    { id: 'gardening', label: 'Gardening' },
+    { id: 'event-staffing', label: 'Event Staffing' },
   ].map((item) => ({ ...item, service: PHASE_1_SERVICES.find((service) => service.id === item.id) }));
 
   const mobileQuickActions = [
@@ -199,9 +200,9 @@ const CustomerHome = () => {
         <section>
           <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Popular Services</h2><Link to="/customer/services" className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></Link></div>
           <div className="grid grid-cols-4 gap-2">
-            {mobileServices.map(({ id, label, emoji, service }) => (
+            {mobileServices.map(({ id, label, service }) => (
               <Link key={id} to={`/customer/jobs/post?category=${encodeURIComponent(service?.name || label)}`} className="flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[18px] border border-slate-200/90 bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(36,32,77,.055)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_8px_20px_rgba(87,52,170,.10)] active:scale-[.97] dark:border-slate-700 dark:bg-surface-800">
-                <span className="flex h-[38px] w-[42px] items-center justify-center rounded-[13px] bg-violet-50 text-[27px] leading-none dark:bg-violet-950/40">{emoji}</span><span className="text-[11px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{label}</span>
+                <span className="flex h-[38px] w-[42px] items-center justify-center rounded-[13px] bg-violet-50 dark:bg-violet-950/40"><ServiceIcon serviceId={id} className="h-7 w-7" /></span><span className="text-[11px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{label}</span>
               </Link>
             ))}
           </div>
@@ -417,8 +418,8 @@ const CustomerHome = () => {
                   key={cat.id}
                   className="group flex flex-col items-center justify-center rounded-xl border border-surface-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-medium dark:border-surface-700 dark:bg-surface-800"
                 >
-                  <span className="mb-2 text-3xl transition group-hover:scale-110">
-                    {cat.emoji}
+                  <span className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 transition group-hover:scale-110 dark:bg-violet-950/40">
+                    <ServiceIcon serviceId={cat.id} className="h-8 w-8" />
                   </span>
                   <span className="text-center text-xs font-medium leading-tight text-surface-700 transition group-hover:text-primary-600 dark:text-surface-300 dark:group-hover:text-primary-400">
                     {cat.name}
