@@ -102,6 +102,7 @@ const WorkerJobDetail = () => {
 
   const images = Array.isArray(job.images) ? job.images.filter((image) => image?.url) : [];
   const location = job.location?.address || (job.serviceType === 'digital' ? 'Remote' : 'Location not specified');
+  const summary = job.description?.trim().split(/\r?\n/)[0].slice(0, 110) || '';
   const applied = Boolean(applicationStatus.applied);
   const accepted = applicationStatus.status === 'Accepted';
   const applicationTitle = accepted ? 'Application Accepted' : applicationStatus.status === 'Rejected' ? 'Application Update' : 'Already Applied';
@@ -131,7 +132,7 @@ const WorkerJobDetail = () => {
           </div>
           <div className="relative z-10 mt-6 max-w-[80%] sm:max-w-[78%]">
             <h1 className="break-words text-[30px] font-extrabold leading-[1.1] tracking-tight text-[#11123d] sm:text-[38px] lg:text-[42px] dark:text-white">{job.title}</h1>
-            <p className="mt-2.5 text-[16px] font-medium text-slate-500 dark:text-slate-300">{[job.category, location].filter(Boolean).join(' ? ')}</p>
+            <p className="mt-2.5 line-clamp-1 text-[16px] font-medium text-slate-500 dark:text-slate-300">{summary}</p>
           </div>
 
           <section className="relative z-10 mt-7" aria-label="Job photos">
@@ -191,7 +192,7 @@ const WorkerJobDetail = () => {
               </div>
               <div className="flex min-h-[54px] items-center gap-4 py-2.5">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineLocationMarker className="h-6 w-6" /></span>
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[15px] font-medium text-slate-500 dark:text-slate-400">Location:</dt><dd className="break-words text-[15px] font-semibold text-slate-800 dark:text-slate-100">{location}</dd></div>
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dd className="break-words text-[15px] font-semibold text-slate-800 dark:text-slate-100">{location}</dd></div>
               </div>
               <div className="flex min-h-[54px] items-center gap-4 pt-2.5">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineTag className="h-6 w-6" /></span>
@@ -201,14 +202,12 @@ const WorkerJobDetail = () => {
           </Card>
 
           {job.status === 'Open' && applied ? (
-            <Card className="rounded-[23px] border-violet-100/90 bg-gradient-to-br from-white via-white to-violet-50/80 p-5 text-center shadow-[0_14px_44px_rgba(63,45,119,.08)] sm:p-6 dark:border-slate-700 dark:from-surface-800 dark:to-slate-900">
+            <Card className="flex min-h-[390px] flex-col justify-center rounded-[23px] border-violet-100/90 bg-gradient-to-br from-white via-white to-violet-50/80 p-6 text-center shadow-[0_14px_44px_rgba(63,45,119,.08)] sm:p-7 dark:border-slate-700 dark:from-surface-800 dark:to-slate-900">
               <span className="mx-auto flex h-[66px] w-[66px] items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300"><HiOutlineCheckCircle className="h-11 w-11" /></span>
               <h2 className="mt-3 text-[24px] font-extrabold tracking-tight text-[#11123d] dark:text-white">{applicationTitle}</h2>
               <p className="mx-auto mt-1.5 max-w-[290px] text-[14px] leading-5 text-slate-500 dark:text-slate-400">{applicationMessage}</p>
               <ApplicationProgress status={applicationStatus.status || 'Pending'} />
               <Button variant="secondary" disabled className="mt-6 min-h-[50px] w-full rounded-[15px] text-[15px]">Already Applied</Button>
-              {applicationStatus.status && <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Current status: {applicationStatus.status}</p>}
-              {!accepted && <Button variant="outline" className="mt-3 w-full rounded-[15px]" onClick={() => navigate('/worker/contracts')}>View my contracts</Button>}
             </Card>
           ) : job.status === 'Open' ? (
             <Card className="rounded-[23px] border-violet-100/90 bg-white/90 p-5 shadow-[0_14px_44px_rgba(63,45,119,.08)] sm:p-6 dark:border-slate-700 dark:bg-surface-800">

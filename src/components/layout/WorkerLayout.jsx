@@ -41,6 +41,7 @@ const WorkerLayout = () => {
         </nav>
         <div className="relative mx-[18px] mb-7 overflow-hidden rounded-[22px] border border-violet-400/30 bg-gradient-to-br from-[#8c43db]/80 via-[#6132c3]/80 to-[#351e77]/90 p-5 shadow-[0_16px_38px_rgba(75,35,154,.35)]">
           <div className="absolute -right-7 -top-8 h-28 w-28 rounded-full bg-white/10 blur-xl" />
+          <span aria-hidden="true" className="absolute right-4 top-3 text-[54px] drop-shadow-lg">??</span>
           <HiOutlineSparkles className="relative h-6 w-6 text-amber-200" />
           <p className="relative mt-3 text-[16px] font-bold">Stand out to clients</p>
           <p className="relative mt-1.5 text-[12px] leading-[1.45] text-violet-100/90">A complete profile helps the right customers find you.</p>
