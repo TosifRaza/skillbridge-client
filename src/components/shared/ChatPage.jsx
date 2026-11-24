@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchConversations, markConversationRead } from '@/store/slices/chatSlice';
 import ChatInterface from '@/components/shared/ChatInterface';
@@ -29,10 +30,18 @@ const ChatPage = ({ userRole }) => {
   const dispatch = useAppDispatch();
   const { conversations, loading } = useAppSelector((state) => state.chat);
   const { user } = useAppSelector((state) => state.auth);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeConvo, setActiveConvo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => { dispatch(fetchConversations()); }, [dispatch]);
+
+  const requestedConversationId = searchParams.get('conversationId');
+  useEffect(() => {
+    if (!requestedConversationId || requestedConversationId === activeConvo || !conversations.some((conversation) => conversation.conversationId === requestedConversationId)) return;
+    setActiveConvo(requestedConversationId);
+    dispatch(markConversationRead(requestedConversationId));
+  }, [activeConvo, dispatch, requestedConversationId, conversations]);
 
   const visibleConversations = useMemo(() => conversations.filter((conversation) => {
     const query = searchTerm.trim().toLowerCase();
@@ -42,7 +51,12 @@ const ChatPage = ({ userRole }) => {
   const selectedConversation = conversations.find((conversation) => conversation.conversationId === activeConvo);
   const handleSelectConversation = (conversation) => {
     setActiveConvo(conversation.conversationId);
+    setSearchParams({ conversationId: conversation.conversationId }, { replace: true });
     dispatch(markConversationRead(conversation.conversationId));
+  };
+  const handleBackToConversations = () => {
+    setActiveConvo(null);
+    setSearchParams({}, { replace: true });
   };
 
   return (
@@ -87,7 +101,7 @@ const ChatPage = ({ userRole }) => {
 
       <div className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>
         {selectedConversation ? (
-          <ChatInterface conversationId={selectedConversation.conversationId} otherUserEmail={selectedConversation.participant?.email} project={selectedConversation} userRole={userRole} onBack={() => setActiveConvo(null)} />
+          <ChatInterface conversationId={selectedConversation.conversationId} otherUserEmail={selectedConversation.participant?.email} project={selectedConversation} userRole={userRole} onBack={handleBackToConversations} />
         ) : (
           <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,rgba(99,102,241,.09),transparent_42%),linear-gradient(145deg,#fbfcff,#f5f7fc)] p-8 text-center dark:bg-[radial-gradient(ellipse_at_50%_45%,rgba(99,102,241,.14),transparent_42%),linear-gradient(145deg,#111827,#0f172a)]">
             <div className="mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-[26px] border border-indigo-100 bg-white text-primary-500 shadow-[0_12px_35px_rgba(99,102,241,.15)] dark:border-surface-700 dark:bg-surface-800"><HiOutlineChatAlt className="h-9 w-9" /></div>

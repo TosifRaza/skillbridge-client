@@ -1,9 +1,13 @@
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useSocket } from '@/context/SocketContext';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiLightningBolt } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiOutlinePhone, HiOutlinePhoneMissedCall, HiOutlineX, HiLightningBolt } from 'react-icons/hi';
+
+const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/worker/home' },
@@ -16,9 +20,55 @@ const navItems = [
 const WorkerLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const socket = useSocket();
   const { user } = useAppSelector((state) => state.auth);
+  const [incomingCall, setIncomingCall] = useState(null);
   const handleLogout = async () => { await dispatch(logoutUser()); navigate('/auth/login'); };
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'there';
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const onIncomingCall = (call) => {
+      if (!call?.conversationId || !call?.callId) return;
+      window.sessionStorage.setItem(PENDING_CALL_KEY, JSON.stringify(call));
+      setIncomingCall(call);
+    };
+    const clearCall = ({ callId } = {}) => {
+      setIncomingCall((current) => {
+        if (!current || (callId && current.callId !== callId)) return current;
+        window.sessionStorage.removeItem(PENDING_CALL_KEY);
+        return null;
+      });
+    };
+    const onLocalCallCleared = (event) => clearCall({ callId: event.detail?.callId });
+
+    socket.on('call-incoming', onIncomingCall);
+    socket.on('call-ended', clearCall);
+    socket.on('call-declined', clearCall);
+    window.addEventListener('skillbridge:incoming-call-cleared', onLocalCallCleared);
+    return () => {
+      socket.off('call-incoming', onIncomingCall);
+      socket.off('call-ended', clearCall);
+      socket.off('call-declined', clearCall);
+      window.removeEventListener('skillbridge:incoming-call-cleared', onLocalCallCleared);
+    };
+  }, [socket]);
+
+  const callIsOpenInMessages = incomingCall
+    && location.pathname === '/worker/chat'
+    && new URLSearchParams(location.search).get('conversationId') === incomingCall.conversationId;
+  const openIncomingCall = () => {
+    if (!incomingCall) return;
+    navigate(`/worker/chat?conversationId=${encodeURIComponent(incomingCall.conversationId)}`);
+  };
+  const declineIncomingCall = () => {
+    if (!incomingCall) return;
+    socket?.emit('call-decline', { conversationId: incomingCall.conversationId, callId: incomingCall.callId });
+    window.sessionStorage.removeItem(PENDING_CALL_KEY);
+    setIncomingCall(null);
+  };
 
   return (
     <div className="portal-shell min-h-screen bg-[#f6f4ff] text-surface-800 dark:bg-surface-950 dark:text-surface-100">
@@ -80,6 +130,18 @@ const WorkerLayout = () => {
       <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
         {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/worker/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}><Icon className="h-5 w-5"/><span>{label}</span></NavLink>)}
       </nav>
+      {incomingCall && !callIsOpenInMessages && <div role="dialog" aria-modal="true" aria-label="Incoming call" className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#171a36] text-white shadow-2xl">
+          <div className="flex items-start justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+            <div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-violet-200">Incoming {incomingCall.callType || 'audio'} call</p><h2 className="mt-1 text-xl font-bold">{incomingCall.caller?.name || 'SkillBridge contact'}</h2><p className="mt-1 text-sm text-slate-300">Open Messages to answer the call.</p></div>
+            <button type="button" onClick={declineIncomingCall} aria-label="Decline call" className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"><HiOutlineX className="h-5 w-5"/></button>
+          </div>
+          <div className="flex items-center justify-end gap-3 px-5 py-4 sm:px-6">
+            <button type="button" onClick={declineIncomingCall} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-500"><HiOutlinePhoneMissedCall className="h-4 w-4"/>Decline</button>
+            <button type="button" onClick={openIncomingCall} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-500 px-5 text-sm font-bold text-white transition hover:bg-emerald-400"><HiOutlinePhone className="h-4 w-4"/>Open call</button>
+          </div>
+        </div>
+      </div>}
     </div>
   );
 };

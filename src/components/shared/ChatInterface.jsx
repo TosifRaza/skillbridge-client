@@ -233,6 +233,17 @@ import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineMicrophone, HiOutlinePhoneMissedCall, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 
+const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
+const clearQueuedIncomingCall = (callId) => {
+  try {
+    const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+    if (!callId || queuedCall?.callId === callId) window.sessionStorage.removeItem(PENDING_CALL_KEY);
+  } catch {
+    window.sessionStorage.removeItem(PENDING_CALL_KEY);
+  }
+  window.dispatchEvent(new CustomEvent('skillbridge:incoming-call-cleared', { detail: { callId } }));
+};
+
 const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, project, userRole, onBack }) => {
   const dispatch = useAppDispatch();
   const socket = useSocket();
@@ -271,6 +282,8 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
 
   const clearCall = useCallback(() => {
     window.clearTimeout(ringTimeoutRef.current);
+    const activeCallId = callIdRef.current;
+    if (activeCallId) clearQueuedIncomingCall(activeCallId);
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -363,6 +376,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       socket.emit('call-answer', { conversationId, callId: incomingCall.callId, answer: peerConnection.localDescription });
+      clearQueuedIncomingCall(incomingCall.callId);
       setIncomingCall(null);
       setCallStatus('connecting');
     } catch (error) {
@@ -382,17 +396,31 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   };
 
   useEffect(() => {
+    if (!conversationId || callStatusRef.current !== 'idle') return;
+    try {
+      const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+      if (queuedCall?.conversationId !== conversationId) return;
+      callIdRef.current = queuedCall.callId;
+      pendingCandidatesRef.current = [];
+      setIncomingCall(queuedCall);
+      setCallType(queuedCall.callType);
+      setCallStatus('incoming');
+      setCallError('');
+    } catch {
+      window.sessionStorage.removeItem(PENDING_CALL_KEY);
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
     if (!socket) return undefined;
 
     const onIncomingCall = (call) => {
-      if (call.conversationId !== conversationId) {
-        socket.emit('call-decline', { conversationId: call.conversationId, callId: call.callId });
-        return;
-      }
+      if (call.conversationId !== conversationId) return;
       if (callStatusRef.current !== 'idle') {
         socket.emit('call-decline', { conversationId, callId: call.callId });
         return;
       }
+      window.sessionStorage.setItem(PENDING_CALL_KEY, JSON.stringify(call));
       callIdRef.current = call.callId;
       pendingCandidatesRef.current = [];
       setIncomingCall(call);
