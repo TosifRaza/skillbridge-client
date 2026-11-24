@@ -58,11 +58,13 @@ const ContractPaymentPanel = ({ jobId, viewerRole, expectedBudget, expectedContr
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [error, setError] = useState('');
+  const hasSavedCheckout = Boolean(payment?.id);
+  const serverContractAmount = payment?.contractAmount ?? payment?.grossAmount;
   const priceMismatch = Boolean(payment && (
     payment.priceMismatch
     ||
-    (expectedContractAmount != null && Number(payment.grossAmount) !== Number(expectedContractAmount))
-    || (expectedBudget != null && Number(payment.jobBudget) !== Number(expectedBudget))
+    (expectedContractAmount != null && Number(serverContractAmount) !== Number(expectedContractAmount))
+    || (hasSavedCheckout && expectedBudget != null && Number(payment.jobBudget) !== Number(expectedBudget))
   ));
 
   const fetchStatus = useCallback(async () => {
@@ -172,12 +174,19 @@ const ContractPaymentPanel = ({ jobId, viewerRole, expectedBudget, expectedContr
         <div className="flex items-start gap-3"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${toneClasses[content.tone]}`}>{payment.status === 'Released' ? <HiOutlineCheckCircle className="h-5 w-5" /> : payment.status === 'Failed' ? <HiOutlineExclamationCircle className="h-5 w-5" /> : <HiOutlineLockClosed className="h-4 w-4" />}</span><div><p className="text-sm font-bold text-slate-900 dark:text-white">{content.label}</p><p className="mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{content.description}</p></div></div>
 
         {priceMismatch ? (
-          <div className="my-5 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
-            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownBudget)}</span></div>
-            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Agreed contract</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownContractAmount)}</span></div>
-            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Previous checkout amount</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.grossAmount)}</span></div>
-            <p className="border-t border-slate-200 pt-2 text-amber-700 dark:border-slate-800 dark:text-amber-300">Checkout data does not match these job details, so payment is paused.</p>
-          </div>
+          isCustomer ? (
+            <div className="my-5 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
+              <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownBudget)}</span></div>
+              <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Agreed contract</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownContractAmount)}</span></div>
+              {hasSavedCheckout && <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Saved checkout amount</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.grossAmount)}</span></div>}
+              {!hasSavedCheckout && <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Payment service quote</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(serverContractAmount)}</span></div>}
+              <p className="border-t border-slate-200 pt-2 text-amber-700 dark:border-slate-800 dark:text-amber-300">{hasSavedCheckout ? 'The saved checkout does not match the agreed contract, so payment is paused.' : 'The payment service quote does not match the agreed contract, so payment is paused. Refresh the server before trying again.'}</p>
+            </div>
+          ) : (
+            <div className="my-5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+              Payment setup is being corrected by the customer. Your agreed contract amount remains {formatCurrency(shownContractAmount)}; wait for funding before starting work.
+            </div>
+          )
         ) : (
           <div className="my-5 space-y-2.5 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
             {Number(payment.jobBudget) !== Number(payment.grossAmount) && <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.jobBudget)}</span></div>}
