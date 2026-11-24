@@ -84,7 +84,6 @@ const applicationSlice = createSlice({
       // Fetch Job Applications (Customer)
       .addCase(fetchJobApplications.pending, (state) => {
         state.loading = true;
-        state.applications = [];
         state.error = null;
       })
       .addCase(fetchJobApplications.fulfilled, (state, action) => {

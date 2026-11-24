@@ -20,6 +20,7 @@ import {
   HiOutlineTag,
   HiOutlineBriefcase,
   HiOutlineShieldCheck,
+  HiOutlineRefresh,
 } from 'react-icons/hi';
 
 const MyJobs = () => {
@@ -30,6 +31,8 @@ const MyJobs = () => {
 
   useEffect(() => {
     dispatch(fetchMyJobs({}));
+    const refreshTimer = window.setInterval(() => dispatch(fetchMyJobs({})), 30000);
+    return () => window.clearInterval(refreshTimer);
   }, [dispatch]);
 
   const filteredJobs = jobs.filter((job) => {
@@ -75,11 +78,17 @@ const MyJobs = () => {
             Track your job postings, review received proposals from professionals, and approve completed work.
           </p>
         </div>
-        <Link to="/customer/jobs/post" className="shrink-0">
-          <Button className="gradient-primary flex items-center gap-2 text-white shadow-lg shadow-indigo-500/25 px-5 py-2.5 rounded-xl font-bold">
-            <HiOutlinePlus className="w-5 h-5" /> Post a New Job
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+          <Button variant="outline" onClick={() => dispatch(fetchMyJobs({}))} disabled={loading} className="flex items-center gap-2">
+            <HiOutlineRefresh className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh proposals
           </Button>
-        </Link>
+          <Link to="/customer/jobs/post">
+            <Button className="gradient-primary flex items-center gap-2 text-white shadow-lg shadow-indigo-500/25 px-5 py-2.5 rounded-xl font-bold">
+              <HiOutlinePlus className="w-5 h-5" /> Post a New Job
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}

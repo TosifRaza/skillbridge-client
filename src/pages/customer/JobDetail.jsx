@@ -12,7 +12,7 @@ import JobSettlementFlow from '@/components/shared/JobSettlementFlow';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineChatAlt } from 'react-icons/hi';
+import { HiOutlineChatAlt, HiOutlineRefresh } from 'react-icons/hi';
 
 const formatINR = (val) =>
   new Intl.NumberFormat('en-IN', {
@@ -43,6 +43,8 @@ const CustomerJobDetail = () => {
   useEffect(() => {
     if (isOwner && String(job?._id) === id) {
       dispatch(fetchJobApplications(id));
+      const refreshTimer = window.setInterval(() => dispatch(fetchJobApplications(id)), 30000);
+      return () => window.clearInterval(refreshTimer);
     }
   }, [dispatch, id, isOwner, job?._id]);
 
@@ -187,11 +189,17 @@ const CustomerJobDetail = () => {
                     {isOpen ? 'Review each professional’s experience and availability. The posted price is fixed.' : 'Worker selected for this job.'}
                   </p>
                 </div>
-                {isOpen && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{applications.length} {applications.length === 1 ? 'proposal' : 'proposals'}</span>}
+                {isOpen && <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{applications.length} {applications.length === 1 ? 'proposal' : 'proposals'}</span>
+                  <button type="button" onClick={() => dispatch(fetchJobApplications(id))} disabled={appLoading} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                    <HiOutlineRefresh className={`h-4 w-4 ${appLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>}
               </div>
 
               {isOpen ? (
-                appLoading ? (
+                appLoading && applications.length === 0 ? (
                   <div className="flex justify-center rounded-2xl border border-slate-200 py-8 dark:border-slate-700"><Spinner /></div>
                 ) : applications.length > 0 ? (
                   <div className="space-y-3">
