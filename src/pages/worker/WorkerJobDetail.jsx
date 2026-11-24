@@ -65,6 +65,7 @@ const WorkerJobDetail = () => {
   const dispatch = useAppDispatch();
   const { currentJob: job, loading, error } = useAppSelector((state) => state.job);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [applicationStatus, setApplicationStatus] = useState({ loading: true, applied: false, status: null });
 
   useEffect(() => {
@@ -72,6 +73,10 @@ const WorkerJobDetail = () => {
     dispatch(clearJobError());
     dispatch(fetchJobById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [id]);
 
   useEffect(() => {
     let active = true;
@@ -101,6 +106,7 @@ const WorkerJobDetail = () => {
   }
 
   const images = Array.isArray(job.images) ? job.images.filter((image) => image?.url) : [];
+  const selectedImage = images[selectedImageIndex] || images[0];
   const location = job.location?.address || (job.serviceType === 'digital' ? 'Remote' : 'Location not specified');
   const summary = job.description?.trim().split(/\r?\n/)[0].slice(0, 110) || '';
   const applied = Boolean(applicationStatus.applied);
@@ -142,23 +148,31 @@ const WorkerJobDetail = () => {
                 <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">No job photos attached</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Review the job description for the client's requirements.</p>
               </div>
-            ) : images.length < 3 ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {images.map((image, index) => (
-                  <a key={image._id || image.public_id || image.url || index} href={image.url} target="_blank" rel="noreferrer" aria-label={`Open job photo ${index + 1} in a new tab`} className="group relative block overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-700 dark:bg-slate-900">
-                    <img src={image.url} alt={`Client provided job photo ${index + 1}`} loading={index > 0 ? 'lazy' : 'eager'} className="h-[230px] w-full object-cover transition duration-300 group-hover:scale-[1.02] sm:h-[290px]" />
-                    <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/65 px-3 py-1.5 text-[11px] font-semibold text-white">Open photo</span>
-                  </a>
-                ))}
-              </div>
+            ) : images.length === 1 ? (
+              <a href={selectedImage.url} target="_blank" rel="noreferrer" aria-label="Open job photo in a new tab" className="group relative block overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-700 dark:bg-slate-900">
+                <img src={selectedImage.url} alt="Client provided job photo" className="h-[250px] w-full object-cover sm:h-[326px]" />
+                <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white">View full photo</span>
+              </a>
             ) : (
-              <div className="grid h-[300px] grid-cols-1 gap-3 sm:h-[326px] sm:grid-cols-[minmax(0,2fr)_minmax(120px,.68fr)] sm:grid-rows-3">
-                {images.slice(0, 4).map((image, index) => (
-                  <a key={image._id || image.public_id || image.url || index} href={image.url} target="_blank" rel="noreferrer" aria-label={`Open job photo ${index + 1} in a new tab`} className={`group relative block min-h-0 overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-700 dark:bg-slate-900 ${index === 0 ? 'sm:col-start-1 sm:row-span-3' : 'hidden sm:block'}`}>
-                    <img src={image.url} alt={`Client provided job photo ${index + 1}`} loading={index > 1 ? 'lazy' : 'eager'} className="h-full min-h-[92px] w-full object-cover transition duration-300 group-hover:scale-[1.025]" />
-                    {index === 0 && <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white">View full photo</span>}
-                  </a>
-                ))}
+              <div className="grid gap-3 sm:h-[326px] sm:grid-cols-[minmax(0,2fr)_minmax(120px,.68fr)]">
+                <a href={selectedImage.url} target="_blank" rel="noreferrer" aria-label="Open selected job photo in a new tab" className="group relative block h-[250px] overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-full dark:border-slate-700 dark:bg-slate-900">
+                  <img src={selectedImage.url} alt={`Client provided job photo ${selectedImageIndex + 1}`} className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                  <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white">View full photo</span>
+                </a>
+                <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-col sm:overflow-x-hidden sm:overflow-y-auto sm:pb-0" aria-label="Choose a job photo">
+                  {images.map((image, index) => index === selectedImageIndex ? null : (
+                    <button
+                      key={image._id || image.public_id || image.url || index}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`Show job photo ${index + 1}`}
+                      aria-pressed={false}
+                      className="h-[82px] min-w-[112px] flex-1 overflow-hidden rounded-[14px] border-2 border-transparent bg-slate-100 transition hover:border-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-auto sm:min-h-0 sm:min-w-0"
+                    >
+                      <img src={image.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </section>
