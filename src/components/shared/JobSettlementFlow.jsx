@@ -37,7 +37,7 @@ const JobSettlementFlow = ({ jobId, viewerRole, onUpdated }) => {
 
   useEffect(() => {
     refresh(true);
-    const timer = window.setInterval(() => refresh(), 7000);
+    const timer = window.setInterval(() => refresh(), 15000);
     return () => window.clearInterval(timer);
   }, [refresh]);
 
