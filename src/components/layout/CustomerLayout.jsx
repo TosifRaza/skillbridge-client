@@ -62,7 +62,7 @@ const CustomerLayout = () => {
             <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark flex h-10 w-10 items-center justify-center rounded-[14px] text-xl"><HiLightningBolt /></span><span className="font-bold tracking-tight text-[17px]">SkillBridge</span></Link>
             <div className="hidden lg:block"><p className="text-[11px] font-medium text-slate-400">CUSTOMER WORKSPACE</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
             <div className="ml-auto flex items-center gap-2.5 sm:gap-4">
-              <div className="hidden sm:block"><DarkModeToggle /></div>
+              <DarkModeToggle />
               <button type="button" onClick={() => navigate('/customer/jobs')} aria-label={pendingProposalCount ? `${pendingProposalCount} new proposals` : 'View your jobs'} title="View job updates" className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:bg-indigo-50 dark:border-slate-700 dark:bg-surface-800 dark:text-white lg:hidden"><HiOutlineBell className="h-5 w-5" />{pendingProposalCount > 0 && <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-500 dark:border-surface-800" />}</button>
               <button type="button" onClick={handleLogout} aria-label="Sign out" title="Sign out" className="hidden rounded-lg p-2 text-surface-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-surface-300 dark:hover:bg-rose-950/30 lg:hidden"><HiOutlineLogout className="h-5 w-5" /></button>
               <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-700 sm:block" />
