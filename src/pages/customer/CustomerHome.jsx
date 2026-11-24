@@ -20,6 +20,8 @@ import {
   HiOutlineArrowRight,
   HiOutlineShieldCheck,
   HiOutlineUser,
+  HiOutlinePlus,
+  HiOutlineSearch,
 } from 'react-icons/hi';
 
 const getGreeting = () => {
@@ -157,8 +159,84 @@ const CustomerHome = () => {
     }
   };
 
+  const mobileServices = [
+    { id: 'house-cleaning', label: 'House Cleaning', emoji: '🧹' },
+    { id: 'moving-help', label: 'Moving Help', emoji: '📦' },
+    { id: 'gardening', label: 'Gardening', emoji: '🌿' },
+    { id: 'event-staffing', label: 'Event Staffing', emoji: '🎉' },
+  ].map((item) => ({ ...item, service: PHASE_1_SERVICES.find((service) => service.id === item.id) }));
+
+  const mobileQuickActions = [
+    { icon: HiOutlineUser, label: 'My Jobs', path: '/customer/jobs' },
+    { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
+    { icon: HiOutlineCurrencyDollar, label: 'Wallet', path: '/customer/wallet' },
+    { icon: HiOutlineCog, label: 'Settings', path: '/customer/profile' },
+  ];
+
   return (
     <div className="animate-fade-in pb-10">
+      <div className="space-y-5 md:hidden">
+        <section className="relative min-h-[218px] overflow-hidden rounded-[28px] bg-gradient-to-br from-[#382080] via-[#612dd2] to-[#823ff1] px-5 py-5 text-white shadow-[0_16px_36px_rgba(91,48,194,.22)]">
+          <div className="absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/15" />
+          <div className="absolute bottom-[-62px] right-7 h-44 w-44 rounded-full bg-violet-300/30" />
+          <div className="relative z-10 max-w-[72%]">
+            <h1 className="text-[27px] font-extrabold leading-[1.15] tracking-tight">👋 {getGreeting()}, {displayName}!</h1>
+            <p className="mt-3 text-[16px] leading-[1.45] text-violet-100">Find work, hire help, and get things done easily.</p>
+          </div>
+          <div aria-hidden="true" className="absolute bottom-0 right-3 z-10 flex h-[178px] w-[132px] items-end justify-center overflow-hidden rounded-t-full bg-violet-200/30 text-[112px] leading-none sm:right-8">🧑🏻‍🔧</div>
+          <span aria-hidden="true" className="absolute bottom-10 right-[142px] z-10 text-2xl text-white">✦</span>
+        </section>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Link to="/customer/services" className="flex min-h-[82px] items-center justify-between gap-2 rounded-[22px] bg-gradient-to-r from-[#5223bd] to-[#6937db] px-4 text-white shadow-[0_8px_18px_rgba(85,45,196,.2)] active:scale-[.98]">
+            <span className="flex items-center gap-2.5"><HiOutlineBriefcase className="h-8 w-8 shrink-0"/><span className="text-[15px] font-bold leading-tight sm:text-lg">Find Work</span></span><HiOutlineArrowRight className="h-6 w-6 shrink-0"/>
+          </Link>
+          <Link to="/customer/jobs/post" className="flex min-h-[82px] items-center justify-between gap-2 rounded-[22px] border border-violet-200 bg-violet-50 px-4 text-violet-700 shadow-sm active:scale-[.98] dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-200">
+            <span className="flex items-center gap-2.5"><HiOutlinePlus className="h-8 w-8 shrink-0"/><span className="text-[15px] font-bold leading-tight sm:text-lg">Post a Job</span></span><HiOutlineArrowRight className="h-6 w-6 shrink-0"/>
+          </Link>
+        </div>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Popular Services</h2><Link to="/customer/services" className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></Link></div>
+          <div className="grid grid-cols-4 gap-2">
+            {mobileServices.map(({ id, label, emoji, service }) => (
+              <Link key={id} to={`/customer/jobs/post?category=${encodeURIComponent(service?.name || label)}`} className="flex min-h-[116px] flex-col items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-1.5 py-3 text-center shadow-[0_5px_15px_rgba(25,30,70,.06)] transition active:scale-[.97] dark:border-slate-700 dark:bg-surface-800">
+                <span className="text-[35px] leading-none">{emoji}</span><span className="text-[11px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-3 px-1 text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">My Activity</h2>
+          <div className="grid grid-cols-2 gap-2.5">
+            {stats.map((stat) => (
+              <Link key={stat.label} to={stat.link} className="flex min-h-[82px] items-center gap-2.5 rounded-[22px] border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_14px_rgba(25,30,70,.04)] dark:border-slate-700 dark:bg-surface-800">
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[17px] ${stat.color}`}><stat.icon className="h-6 w-6"/></span>
+                <span className="min-w-0"><span className="block truncate text-[24px] font-extrabold leading-7 text-slate-950 dark:text-white">{stat.value}</span><span className="block truncate text-[12px] leading-4 text-slate-600 dark:text-slate-300">{stat.label === 'Active Jobs' ? 'Active Job' : stat.label === 'Pending Proposals' ? 'Pending' : stat.label === 'Total Spent' ? 'Total Spent' : stat.label}</span></span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <Link to="/customer/profile" className="flex min-h-[94px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[0_5px_16px_rgba(25,30,70,.05)] dark:border-slate-700 dark:bg-surface-800">
+          <div className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full" style={{ background: `conic-gradient(#642ce0 ${profileCompletion}%, #e9e7f2 ${profileCompletion}% 100%)` }}><span className="flex h-[49px] w-[49px] items-center justify-center rounded-full bg-white text-[17px] font-extrabold text-slate-900 dark:bg-surface-800 dark:text-white">{profileCompletion}%</span></div>
+          <span className="min-w-0 flex-1 border-l border-slate-200 pl-3 dark:border-slate-700"><span className="block text-[15px] font-extrabold leading-tight text-slate-950 dark:text-white">Complete Your Profile</span><span className="mt-1 block text-[12px] leading-4 text-slate-600 dark:text-slate-300">{profileCompletion === 100 ? 'Your profile is ready to go.' : 'Add your details to get more work.'}</span></span><HiOutlineArrowRight className="h-5 w-5 shrink-0 rotate-[-45deg] text-slate-500"/>
+        </Link>
+
+        <section>
+          <h2 className="mb-3 px-1 text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Quick Actions</h2>
+          <div className="grid grid-cols-4 gap-2.5">
+            {mobileQuickActions.map(({ icon: Icon, label, path }) => <Link key={label} to={path} className="flex min-h-[95px] flex-col items-center justify-center gap-2 rounded-[22px] bg-violet-50 px-1 py-3 text-violet-700 transition active:scale-[.97] dark:bg-violet-950/40 dark:text-violet-300"><Icon className="h-7 w-7"/><span className="text-[12px] font-bold text-slate-900 dark:text-slate-100">{label}</span></Link>)}
+          </div>
+        </section>
+
+        <Link to="/customer/jobs" className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-surface-800">
+          <HiOutlineSearch className="mt-0.5 h-5 w-5 shrink-0 text-violet-600"/><span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900 dark:text-white">Recent updates</span>{activities.length ? <span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{activities[0].text}</span> : <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Your job and proposal updates will appear here.</span>}</span><HiOutlineArrowRight className="h-4 w-4 text-slate-400"/>
+        </Link>
+      </div>
+
+      <div className="hidden md:block">
       {/* Top Hero Banner */}
       <section className="relative mb-8 overflow-hidden rounded-[28px] bg-[#171d3c] px-6 py-7 text-white shadow-[0_22px_55px_rgba(43,48,112,.18)] sm:px-9 sm:py-9">
         <div className="absolute -right-14 -top-28 h-72 w-72 rounded-full bg-indigo-500/30 blur-3xl" />
@@ -474,6 +552,8 @@ const CustomerHome = () => {
             )}
           </Card>
         </div>
+      </div>
+
       </div>
 
       {/* Direct Hire Modal */}
