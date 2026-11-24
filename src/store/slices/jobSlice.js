@@ -265,12 +265,11 @@ const initialState = {
 // ==========================================
 export const fetchAvailableJobs = createAsyncThunk(
   'job/fetchAvailable',
-  async (params, { getState, rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const city = state.location?.city;
-      const queryParams = { ...params, city };
-      const response = await axiosInstance.get('/jobs/available', { params: queryParams });
+      // Apply a location filter only when the screen explicitly supplies one.
+      // The previous implicit default city (Mumbai) hid jobs with generic addresses.
+      const response = await axiosInstance.get('/jobs/available', { params });
       return response.data.data; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch available jobs');

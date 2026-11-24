@@ -51,7 +51,7 @@ const BrowseJobs = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-surface-900 dark:text-white">Find Work</h1>
-          <p className="text-surface-500 dark:text-surface-400">Browse local and digital jobs in your area.</p>
+          <p className="text-surface-500 dark:text-surface-400">Browse open local and digital jobs from every area.</p>
         </div>
       </div>
 

@@ -27,6 +27,7 @@ const DirectHireModal = ({ isOpen, onClose, provider }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { city } = useAppSelector((state) => state.location);
   const { loading } = useAppSelector((state) => state.job);
 
   const [formData, setFormData] = useState({
@@ -58,7 +59,7 @@ const DirectHireModal = ({ isOpen, onClose, provider }) => {
       const defaultAddress =
         user?.addresses?.[0]?.street && user?.addresses?.[0]?.city
           ? `${user.addresses[0].street}, ${user.addresses[0].city}`
-          : 'Local Address';
+          : city || 'Local Address';
 
       setFormData({
         title: `Service booking with ${provider.name}`,
