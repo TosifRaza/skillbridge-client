@@ -11,6 +11,11 @@ import { HiOutlineChatAlt, HiOutlineSearch, HiOutlineShieldCheck } from 'react-i
 
 const getPreview = (message, userId) => {
   if (!message) return 'Say hello to start chatting';
+  if (message.type === 'call') {
+    const callType = message.call?.callType === 'video' ? 'Video' : 'Audio';
+    const state = message.call?.status === 'missed' ? 'missed' : message.call?.status === 'declined' ? 'declined' : 'call';
+    return `${callType} ${state}`;
+  }
   const imageCount = message.imageUrls?.length || (message.imageUrl ? 1 : 0);
   const attachmentPreview = imageCount > 1 ? `${imageCount} photos shared` : imageCount === 1 ? 'Photo shared' : 'New message';
   const text = message.text?.trim() || attachmentPreview;

@@ -226,7 +226,7 @@
 // export default ChatInterface;
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchChatHistory, addSocketMessage, uploadChatImage, clearChat } from '@/store/slices/chatSlice';
+import { fetchChatHistory, addSocketMessage, updateSocketMessage, uploadChatImage, clearChat } from '@/store/slices/chatSlice';
 import { useSocket } from '@/context/SocketContext';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
@@ -242,6 +242,21 @@ const clearQueuedIncomingCall = (callId) => {
     window.sessionStorage.removeItem(PENDING_CALL_KEY);
   }
   window.dispatchEvent(new CustomEvent('skillbridge:incoming-call-cleared', { detail: { callId } }));
+};
+const formatCallTime = (value) => value
+  ? new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  : '—';
+const formatCallDateTime = (value) => value
+  ? new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  : '—';
+const formatCallDuration = (value) => {
+  const totalSeconds = Math.max(0, Number(value) || 0);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes) return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+  return `${seconds}s`;
 };
 
 const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, project, userRole, onBack }) => {
@@ -351,7 +366,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       ringTimeoutRef.current = window.setTimeout(() => {
         if (callStatusRef.current !== 'connected') {
           setCallError('No answer. You can try calling again.');
-          if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current });
+          if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current, reason: 'no-answer' });
           clearCall();
         }
       }, 35000);
@@ -391,7 +406,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   };
 
   const endCall = () => {
-    if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current });
+    if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current, reason: callStatusRef.current === 'calling' ? 'cancelled' : 'hangup' });
     clearCall();
   };
 
@@ -611,8 +626,12 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       dispatch(addSocketMessage(message));
     }
   };
+  const handleCallLogUpdate = (message) => {
+    if (message.conversationId === conversationId) dispatch(updateSocketMessage(message));
+  };
 
   socket.on("receive-message", handleReceiveMessage);
+  socket.on('call-log-updated', handleCallLogUpdate);
 
   socket.on("display-typing", (data) => {
     if (data.conversationId === conversationId) {
@@ -630,6 +649,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     console.log("🧹 Cleaning listeners");
 
     socket.off("receive-message", handleReceiveMessage);
+    socket.off('call-log-updated', handleCallLogUpdate);
     socket.off("display-typing");
     socket.off("display-stop-typing");
   };
@@ -743,6 +763,33 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
         {messages.length > 0 && <div className="mx-auto mb-5 w-fit rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-[10px] font-medium text-slate-400 dark:border-surface-700 dark:bg-surface-800">Your project conversation</div>}
         {messages.map((msg, idx) => {
           const isMine = msg.sender?._id === user?._id || msg.sender === user?._id;
+          if (msg.type === 'call') {
+            const call = msg.call || {};
+            const isVideo = call.callType === 'video';
+            const CallIcon = isVideo ? HiOutlineVideoCamera : HiOutlinePhone;
+            const statusLabel = {
+              ringing: 'Calling…',
+              ongoing: 'In progress',
+              completed: 'Call ended',
+              missed: 'Missed call',
+              declined: 'Declined',
+              cancelled: 'Cancelled',
+            }[call.status] || 'Call';
+            return (
+              <div key={msg._id || idx} className="flex justify-center py-1">
+                <div className="flex w-full max-w-sm items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-surface-700 dark:bg-surface-800">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${call.status === 'missed' || call.status === 'declined' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300'}`}><CallIcon className="h-5 w-5"/></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{isMine ? 'Outgoing' : 'Incoming'} {isVideo ? 'video' : 'audio'} call · {statusLabel}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Started {formatCallDateTime(call.startedAt)}{call.endedAt ? ` · Ended ${formatCallDateTime(call.endedAt)}` : ''}</p>
+                    {call.status === 'completed' && <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Duration {formatCallDuration(call.durationSeconds)}</p>}
+                    {call.status === 'missed' && <p className="text-xs text-slate-500 dark:text-slate-400">No answer</p>}
+                  </div>
+                  <time className="shrink-0 self-start text-[10px] text-slate-400">{formatCallTime(msg.createdAt)}</time>
+                </div>
+              </div>
+            );
+          }
           const imageUrls = msg.imageUrls?.length ? msg.imageUrls : msg.imageUrl ? [msg.imageUrl] : [];
           const visibleImages = imageUrls.length > 4 ? imageUrls.slice(0, 4) : imageUrls;
           const galleryClass = imageUrls.length === 1

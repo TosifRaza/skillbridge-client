@@ -276,7 +276,20 @@ const chatSlice = createSlice({
       if (conversation) conversation.unreadCount = 0;
     },
     addSocketMessage: (state, action) => {
-      state.messages.push(action.payload);
+      const incoming = action.payload;
+      const existingIndex = state.messages.findIndex((message) => message._id === incoming._id);
+      if (existingIndex >= 0) state.messages[existingIndex] = incoming;
+      else state.messages.push(incoming);
+      const conversation = state.conversations.find((item) => item.conversationId === incoming.conversationId);
+      if (conversation) conversation.lastMessage = incoming;
+    },
+    updateSocketMessage: (state, action) => {
+      const updated = action.payload;
+      const existingIndex = state.messages.findIndex((message) => message._id === updated._id);
+      if (existingIndex >= 0) state.messages[existingIndex] = updated;
+      else state.messages.push(updated);
+      const conversation = state.conversations.find((item) => item.conversationId === updated.conversationId);
+      if (conversation?.lastMessage?._id === updated._id) conversation.lastMessage = updated;
     },
     clearChat: (state) => {
       state.messages = [];
@@ -302,5 +315,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { addSocketMessage, clearChat, markConversationRead } = chatSlice.actions;
+export const { addSocketMessage, updateSocketMessage, clearChat, markConversationRead } = chatSlice.actions;
 export default chatSlice.reducer;
