@@ -224,14 +224,19 @@
 // };
 
 // export default ChatInterface;
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchChatHistory, addSocketMessage, updateSocketMessage, uploadChatImage, clearChat } from '@/store/slices/chatSlice';
+import { fetchChatHistory, addSocketMessage, updateSocketMessage, uploadChatImage, clearChat, markMessagesRead } from '@/store/slices/chatSlice';
 import { useSocket } from '@/context/SocketContext';
+import axiosInstance from '@/api/axiosInstance';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineMicrophone, HiOutlinePhoneMissedCall, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
+import { LuCheck, LuCheckCheck, LuClipboardCheck, LuDownload, LuFileText, LuPlus, LuSmile } from 'react-icons/lu';
+import { FaBroom } from 'react-icons/fa';
+import './ChatInterface.mobile.css';
 
 const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
 const AUTO_ANSWER_CALL_KEY = 'skillbridge:auto-answer-call';
@@ -260,18 +265,41 @@ const formatCallDuration = (value) => {
   return `${seconds}s`;
 };
 
-const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, project, userRole, onBack }) => {
+const messageDay = (value) => value ? new Date(value).toDateString() : '';
+const dayLabel = (value) => messageDay(value) === new Date().toDateString()
+  ? 'Today'
+  : new Date(value).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+const emojis = ['🙂', '👍', '😊', '🙏', '✅', '🎉'];
+
+const SelectedPhoto = ({ file, index }) => {
+  const imageRef = useRef(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    if (imageRef.current) imageRef.current.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  return <img ref={imageRef} alt={`Selected image ${index + 1}`} className="h-16 w-16 rounded-xl border border-white object-cover shadow-sm dark:border-surface-700" />;
+};
+
+const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, project, projectHref, userRole, onBack }) => {
   const dispatch = useAppDispatch();
   const socket = useSocket();
-  const { messages, loading } = useAppSelector((state) => state.chat);
+  const { messages, loading, error: historyError } = useAppSelector((state) => state.chat);
   const { user } = useAppSelector((state) => state.auth);
   
   const [messageInput, setMessageInput] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
   const [lightbox, setLightbox] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [composerMenu, setComposerMenu] = useState(null);
+  const [messageError, setMessageError] = useState('');
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [completionSent, setCompletionSent] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
+  const [completionError, setCompletionError] = useState('');
   const [callStatus, setCallStatus] = useState('idle');
   const [callType, setCallType] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
@@ -282,6 +310,9 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const [callError, setCallError] = useState('');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const documentInputRef = useRef(null);
+  const composerInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -291,10 +322,14 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const callStatusRef = useRef(callStatus);
   const pendingCandidatesRef = useRef([]);
   const ringTimeoutRef = useRef(null);
-  const participantName = otherUserEmail?.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || (userRole === 'customer' ? 'Your worker' : 'Customer');
+  const participantId = project?.participant?._id;
+  const participantName = project?.participant?.fullName || otherUserEmail?.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || (userRole === 'customer' ? 'Your worker' : 'Customer');
+  const ProjectIcon = project?.category === 'House Cleaning' ? FaBroom : HiOutlineBriefcase;
+  const canComplete = userRole === 'provider' && project?._id && ['Assigned', 'In-Progress'].includes(project.status) && !project.workSubmittedAt && !completionSent;
+  const hasDraft = messageInput.trim() || selectedImages.length > 0 || selectedDocument;
   const formattedBudget = project?.budget != null ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(project.budget) : null;
   const formattedDeadline = project?.deadline ? new Date(project.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-  callStatusRef.current = callStatus;
+  useLayoutEffect(() => { callStatusRef.current = callStatus; }, [callStatus]);
 
   const clearCall = useCallback(() => {
     window.clearTimeout(ringTimeoutRef.current);
@@ -377,7 +412,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     }
   };
 
-  const answerCall = async (callToAnswer = incomingCall) => {
+  const answerCall = useCallback(async (callToAnswer) => {
     if (!callToAnswer || !socket) return;
     try {
       const preparedMedia = window.__skillBridgeIncomingCallStream;
@@ -410,7 +445,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       setCallStatus('incoming');
       setCallError(error.name === 'NotAllowedError' ? 'Allow camera and microphone access, then tap Answer again.' : 'Could not join the call. Check your camera and microphone, then try again.');
     }
-  };
+  }, [addPendingCandidates, conversationId, createPeerConnection, socket]);
 
   const declineCall = () => {
     if (incomingCall && socket) socket.emit('call-decline', { conversationId, callId: incomingCall.callId });
@@ -423,25 +458,28 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   };
 
   useEffect(() => {
-    if (!conversationId || callStatusRef.current !== 'idle') return;
-    try {
-      const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
-      if (queuedCall?.conversationId !== conversationId) return;
-      callIdRef.current = queuedCall.callId;
-      pendingCandidatesRef.current = queuedCall.pendingCandidates || [];
-      setIncomingCall(queuedCall);
-      setCallType(queuedCall.callType);
-      setCallStatus('incoming');
-      setCallError('');
-      const autoAnswerCallId = window.sessionStorage.getItem(AUTO_ANSWER_CALL_KEY);
-      if (autoAnswerCallId === queuedCall.callId) {
-        window.sessionStorage.removeItem(AUTO_ANSWER_CALL_KEY);
-        void answerCall(queuedCall);
+    if (!socket || !conversationId || callStatusRef.current !== 'idle') return;
+    const timer = window.setTimeout(() => {
+      if (callStatusRef.current !== 'idle') return;
+      try {
+        const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+        if (queuedCall?.conversationId !== conversationId) return;
+        callIdRef.current = queuedCall.callId;
+        pendingCandidatesRef.current = queuedCall.pendingCandidates || [];
+        setIncomingCall(queuedCall);
+        setCallType(queuedCall.callType);
+        setCallStatus('incoming');
+        setCallError('');
+        if (window.sessionStorage.getItem(AUTO_ANSWER_CALL_KEY) === queuedCall.callId) {
+          window.sessionStorage.removeItem(AUTO_ANSWER_CALL_KEY);
+          void answerCall(queuedCall);
+        }
+      } catch {
+        window.sessionStorage.removeItem(PENDING_CALL_KEY);
       }
-    } catch {
-      window.sessionStorage.removeItem(PENDING_CALL_KEY);
-    }
-  }, [conversationId, answerCall]);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [conversationId, answerCall, socket]);
 
   useEffect(() => {
     if (!socket) return undefined;
@@ -515,12 +553,6 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   }, [callType, remoteStream]);
 
   useEffect(() => {
-    const previewUrls = selectedImages.map((file) => URL.createObjectURL(file));
-    setImagePreviews(previewUrls);
-    return () => previewUrls.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
-  }, [selectedImages]);
-
-  useEffect(() => {
     if (!lightbox) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -543,17 +575,11 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
 
   // Fetch History & Join Room
   useEffect(() => {
-    if (conversationId) {
-      console.log('🚪 Joining room:', conversationId);
-      dispatch(fetchChatHistory(conversationId));
-      if (socket) {
-        socket.emit('join-room', conversationId);
-      }
-    }
+    if (conversationId) dispatch(fetchChatHistory(conversationId));
     return () => {
       dispatch(clearChat());
     };
-  }, [dispatch, conversationId, socket]);
+  }, [dispatch, conversationId]);
 // useEffect(() => {
 //   if (!conversationId || !socket) return;
 
@@ -627,112 +653,119 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
 
 
   useEffect(() => {
-  console.log("🔍 Socket Instance:", socket);
-
-  if (!socket) {
-    console.log("❌ Socket is NULL");
-    return;
-  }
-
-  console.log("✅ Registering receive-message listener");
-
-  const handleReceiveMessage = (message) => {
-    console.log("📬 Received:", message);
-
-    if (message.conversationId === conversationId) {
+    if (!socket || !conversationId) return;
+    let mounted = true;
+    const join = () => {
+      socket.emit('join-room', conversationId);
+      socket.emit('get-conversation-presence', conversationId, (presence) => {
+        if (mounted) setIsOnline(Boolean(presence?.online));
+      });
+    };
+    const disconnect = () => { setIsOnline(false); setIsTyping(false); };
+    const presenceChanged = ({ userId, status }) => {
+      if (String(userId) !== String(participantId)) return;
+      setIsOnline(status === 'online');
+      if (status !== 'online') setIsTyping(false);
+    };
+    const receive = (message) => {
+      if (message.conversationId !== conversationId) return;
       dispatch(addSocketMessage(message));
-    }
-  };
-  const handleCallLogUpdate = (message) => {
-    if (message.conversationId === conversationId) dispatch(updateSocketMessage(message));
-  };
+      if (String(message.sender?._id || message.sender) !== String(user?._id)) {
+        socket.emit('mark-as-read', conversationId);
+      }
+    };
+    const updateCall = (message) => {
+      if (message.conversationId === conversationId) dispatch(updateSocketMessage(message));
+    };
+    const read = (receipt) => {
+      if (receipt.conversationId === conversationId) dispatch(markMessagesRead(receipt));
+    };
+    const typing = (data) => { if (data.conversationId === conversationId) setIsTyping(true); };
+    const stopTyping = (data) => { if (data.conversationId === conversationId) setIsTyping(false); };
+    const workSubmitted = (data) => { if (data.conversationId === conversationId) setCompletionSent(true); };
+    const listeners = {
+      connect: join, disconnect, 'user-status': presenceChanged, 'receive-message': receive,
+      'call-log-updated': updateCall, 'messages-read': read, 'display-typing': typing, 'display-stop-typing': stopTyping,
+      'job-work-submitted': workSubmitted,
+    };
+    Object.entries(listeners).forEach(([event, handler]) => socket.on(event, handler));
+    if (socket.connected !== false) join();
 
-  socket.on("receive-message", handleReceiveMessage);
-  socket.on('call-log-updated', handleCallLogUpdate);
-
-  socket.on("display-typing", (data) => {
-    if (data.conversationId === conversationId) {
-      setIsTyping(true);
-    }
-  });
-
-  socket.on("display-stop-typing", (data) => {
-    if (data.conversationId === conversationId) {
-      setIsTyping(false);
-    }
-  });
-
-  return () => {
-    console.log("🧹 Cleaning listeners");
-
-    socket.off("receive-message", handleReceiveMessage);
-    socket.off('call-log-updated', handleCallLogUpdate);
-    socket.off("display-typing");
-    socket.off("display-stop-typing");
-  };
-}, [socket, conversationId, dispatch]);
+    return () => {
+      mounted = false;
+      window.clearTimeout(typingTimeoutRef.current);
+      if (socket.connected !== false) {
+        socket.emit('stop-typing', conversationId);
+        socket.emit('leave-room', conversationId);
+      }
+      Object.entries(listeners).forEach(([event, handler]) => socket.off(event, handler));
+    };
+  }, [socket, conversationId, dispatch, participantId, user?._id]);
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    const list = messagesEndRef.current?.parentElement;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages, isTyping, showCompletion, completionSent]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if ((!messageInput.trim() && selectedImages.length === 0) || !socket || isSending) return;
+    if (!hasDraft || isSending) return;
+    if (!selectedDocument && (!socket || socket.connected === false)) {
+      setMessageError('Connecting to chat. Please try again in a moment.');
+      return;
+    }
 
     setIsSending(true);
-    const imageUrls = [];
+    setMessageError('');
+    setComposerMenu(null);
     try {
-      for (const file of selectedImages) {
-        const uploadedUrl = await dispatch(uploadChatImage(file)).unwrap();
-        if (!uploadedUrl) throw new Error('An image could not be uploaded. Please try again.');
-        imageUrls.push(uploadedUrl);
-      }
-    } catch (error) {
-      setIsSending(false);
-      alert(error || 'Image upload failed. Please try again.');
-      return;
-    }
-
-    const messageData = {
-      conversationId,
-      text: messageInput.trim(),
-      imageUrl: imageUrls[0] || null,
-      imageUrls,
-      senderEmail: currentUserEmail || user?.email, // ADD SENDER EMAIL
-      recipientEmail: otherUserEmail // ADD RECIPIENT EMAIL
-    };
-
-    const response = await new Promise((resolve) => socket.emit('send-message', messageData, (result) => {
-      resolve(result);
-    }));
-    if (response?.status === 'error') {
-      setIsSending(false);
-      alert(response.message || 'Message could not be sent. Please try again.');
-      return;
-    }
-    /*
-    socket.emit('send-message', messageData, (response) => {
-      if (response && response.status === 'error') {
-        console.error('Server rejected message:', response.message);
-        alert(`Failed to send message: ${response.message}`);
+      if (selectedDocument) {
+        const form = new FormData();
+        form.append('file', selectedDocument);
+        form.append('text', messageInput.trim());
+        const response = await axiosInstance.post(`/chat/${conversationId}/files`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        dispatch(addSocketMessage(response.data.data));
       } else {
-        console.log('✅ Message sent successfully');
+        const imageUrls = [];
+        for (const file of selectedImages) {
+          const uploadedUrl = await dispatch(uploadChatImage(file)).unwrap();
+          if (!uploadedUrl) throw new Error('An image could not be uploaded. Please try again.');
+          imageUrls.push(uploadedUrl);
+        }
+        const messageData = {
+          conversationId, text: messageInput.trim(), imageUrl: imageUrls[0] || null, imageUrls,
+          senderEmail: currentUserEmail || user?.email, recipientEmail: otherUserEmail,
+        };
+        const response = await new Promise((resolve, reject) => {
+          if (typeof socket.timeout === 'function') {
+            socket.timeout(12000).emit('send-message', messageData, (error, result) => error ? reject(error) : resolve(result));
+          } else {
+            socket.emit('send-message', messageData, resolve);
+          }
+        });
+        if (response?.status !== 'ok') throw new Error(response?.message || 'Message could not be sent. Please try again.');
+        if (response.message) dispatch(addSocketMessage(response.message));
       }
-    });
-    */
-    
-    socket.emit('stop-typing', conversationId);
-    setMessageInput('');
-    setSelectedImages([]);
-    setIsSending(false);
+      socket?.emit('stop-typing', conversationId);
+      setMessageInput('');
+      setSelectedImages([]);
+      setSelectedDocument(null);
+    } catch (error) {
+      setMessageError(error.response?.data?.message || error.message || String(error));
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const handleTyping = (e) => {
-    setMessageInput(e.target.value);
-    if (socket) {
-      socket.emit('typing', { conversationId, senderEmail: currentUserEmail || user?.email });
+  const handleDraftChange = (value) => {
+    setMessageInput(value);
+    window.clearTimeout(typingTimeoutRef.current);
+    if (socket && socket.connected !== false) {
+      socket.emit(value.trim() ? 'typing' : 'stop-typing', conversationId);
+      if (value.trim()) typingTimeoutRef.current = window.setTimeout(() => socket.emit('stop-typing', conversationId), 2200);
     }
   };
 
@@ -742,44 +775,103 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     const invalidType = files.find((file) => !file.type.startsWith('image/'));
     const oversizedFile = files.find((file) => file.size > 5 * 1024 * 1024);
     const remainingSlots = Math.max(0, 5 - selectedImages.length);
-    if (invalidType) alert('Please choose image files only.');
-    else if (oversizedFile) alert('Each image must be smaller than 5 MB.');
+    setMessageError('');
+    if (selectedDocument) setMessageError('Remove the PDF before adding photos.');
+    else if (invalidType) setMessageError('Please choose image files only.');
+    else if (oversizedFile) setMessageError('Each image must be smaller than 5 MB.');
     else {
-      if (files.length > remainingSlots) alert('You can attach up to 5 images per message.');
+      if (files.length > remainingSlots) setMessageError('You can attach up to 5 images per message.');
       setSelectedImages((current) => [...current, ...files.slice(0, remainingSlots)]);
     }
     e.target.value = '';
   };
 
-  if (loading) return <div className="flex justify-center py-10"><Spinner /></div>;
+  const handleDocumentUpload = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setMessageError('');
+    if (selectedImages.length) setMessageError('Remove the photos before adding a PDF.');
+    else if (!/\.pdf$/i.test(file.name)) setMessageError('Choose a PDF file.');
+    else if (file.size > 5 * 1024 * 1024) setMessageError('The PDF must be smaller than 5 MB.');
+    else setSelectedDocument(file);
+  };
+
+  const downloadDocument = async (message) => {
+    setMessageError('');
+    try {
+      const { data } = await axiosInstance.get(`/chat/${conversationId}/files/${message._id}`, { responseType: 'blob' });
+      const fileUrl = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = message.attachment.name;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+    } catch {
+      setMessageError('Could not download this PDF. Please try again.');
+    }
+  };
+
+  const submitCompletion = async () => {
+    if (!canComplete || completionPending) return;
+    setCompletionPending(true);
+    setCompletionError('');
+    try {
+      await axiosInstance.post(`/jobs/${project._id}/complete-work`, {});
+      setShowCompletion(false);
+      setCompletionSent(true);
+    } catch (error) {
+      setCompletionError(error.response?.data?.message || 'Could not submit work completion.');
+    } finally {
+      setCompletionPending(false);
+    }
+  };
+
+  const openPicker = (ref) => {
+    setComposerMenu(null);
+    ref.current?.click();
+  };
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f8f9fd] dark:bg-surface-900">
-      <section className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,.045),transparent_35%),#f8f9fd] dark:bg-surface-900">
+    <div className="project-chat flex h-full min-h-0 bg-[#f8f9fd] dark:bg-surface-900">
+      <section className="project-chat-thread flex min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,.045),transparent_35%),#f8f9fd] dark:bg-surface-900">
       
       {/* Chat Header */}
-      <div className="flex h-[76px] shrink-0 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6">
-        <button type="button" onClick={onBack} aria-label="Back to conversations" className="mr-3 rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-primary-600 dark:hover:bg-surface-700 md:hidden"><HiOutlineArrowLeft className="h-5 w-5"/></button>
-        <div className="relative"><Avatar src={project?.participant?.avatar?.url} name={participantName} size="md"/><span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400 dark:border-surface-800"/></div>
+      <header className="project-chat-header shrink-0">
+      <div className="project-chat-person flex h-[76px] items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6">
+        <button type="button" onClick={onBack} aria-label="Back to conversations" className="project-chat-back mr-3 rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-primary-600 dark:hover:bg-surface-700 md:hidden"><HiOutlineArrowLeft className="h-5 w-5"/></button>
+        <div className="project-chat-peer relative"><Avatar src={project?.participant?.avatar?.url} name={participantName} size="md"/>{isOnline && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-surface-800"/>}</div>
         <div className="ml-3 min-w-0">
-          <p className="truncate text-sm font-bold text-surface-900 dark:text-white">{participantName}</p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-            {isTyping ? <><span className="flex gap-0.5"><i className="h-1 w-1 animate-bounce rounded-full bg-current"/><i className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:100ms]"/><i className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:200ms]"/></span> Typing…</> : <>Online now</>}
-          </p>
-          {project?.title && <p className="mt-0.5 max-w-56 truncate text-[10px] text-slate-400">{project.title}</p>}
+          <p className="project-chat-name truncate text-sm font-bold text-surface-900 dark:text-white">{participantName}</p>
+          <p className={`mt-0.5 text-[11px] font-medium ${isOnline || isTyping ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{isTyping ? 'Typing…' : isOnline ? 'Online now' : 'Offline'}</p>
+          {project?.title && <p className="mt-0.5 hidden max-w-56 truncate text-[10px] text-slate-400 md:block">{project.title}</p>}
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="project-chat-calls ml-auto flex shrink-0 items-center gap-1.5">
           <button type="button" aria-label="Start audio call" title="Audio call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall('audio')} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlinePhone className="h-[18px] w-[18px]"/></button>
           <button type="button" aria-label="Start video call" title="Video call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall('video')} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlineVideoCamera className="h-[18px] w-[18px]"/></button>
-          <button type="button" aria-label="Conversation options" className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-surface-700"><HiOutlineDotsVertical className="h-5 w-5"/></button>
+          {projectHref && <details className="project-chat-options relative">
+            <summary aria-label="Conversation options" className="cursor-pointer list-none rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-surface-700"><HiOutlineDotsVertical className="h-5 w-5"/></summary>
+            <Link to={projectHref} className="absolute right-0 top-full z-10 whitespace-nowrap rounded-xl border border-violet-100 bg-white px-3 py-2 text-xs font-semibold text-violet-800 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-violet-200">View job details</Link>
+          </details>}
         </div>
       </div>
+      {project?.title && projectHref && <div className="project-chat-job md:hidden">
+        <span className="project-chat-job-icon"><ProjectIcon aria-hidden="true" /></span>
+        <span className="project-chat-job-title" title={project.title}>{project.title}</span>
+        {formattedBudget && <span className="project-chat-job-price">{formattedBudget}</span>}
+        <Link to={projectHref} className="project-chat-view">View Details <HiOutlineChevronRight aria-hidden="true" /></Link>
+      </div>}
+      </header>
 
       {/* Messages Area */}
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-7">
-        {messages.length > 0 && <div className="mx-auto mb-5 w-fit rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-[10px] font-medium text-slate-400 dark:border-surface-700 dark:bg-surface-800">Your project conversation</div>}
+      <div className="project-chat-messages min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-7" aria-label="Chat messages" aria-busy={loading}>
+        {loading && messages.length === 0 && <div className="flex justify-center py-10"><Spinner /></div>}
+        {!loading && historyError && <div role="alert" className="project-chat-error">{historyError} <button type="button" className="font-bold underline" onClick={() => dispatch(fetchChatHistory(conversationId))}>Retry</button></div>}
+        {!loading && !historyError && messages.length === 0 && <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">Say hello to start the conversation.</p>}
         {messages.map((msg, idx) => {
           const isMine = msg.sender?._id === user?._id || msg.sender === user?._id;
+          const showDay = msg.createdAt && messageDay(msg.createdAt) !== messageDay(messages[idx - 1]?.createdAt);
+          const dateDivider = showDay && <div className="project-chat-day">{dayLabel(msg.createdAt)}</div>;
           if (msg.type === 'call') {
             const call = msg.call || {};
             const isVideo = call.callType === 'video';
@@ -793,7 +885,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
               cancelled: 'Cancelled',
             }[call.status] || 'Call';
             return (
-              <div key={msg._id || idx} className="flex justify-center py-1">
+              <Fragment key={msg._id || idx}>{dateDivider}<div className="flex justify-center py-1">
                 <div className="flex w-full max-w-sm items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-surface-700 dark:bg-surface-800">
                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${call.status === 'missed' || call.status === 'declined' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300'}`}><CallIcon className="h-5 w-5"/></span>
                   <div className="min-w-0 flex-1">
@@ -804,7 +896,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
                   </div>
                   <time className="shrink-0 self-start text-[10px] text-slate-400">{formatCallTime(msg.createdAt)}</time>
                 </div>
-              </div>
+              </div></Fragment>
             );
           }
           const imageUrls = msg.imageUrls?.length ? msg.imageUrls : msg.imageUrl ? [msg.imageUrl] : [];
@@ -816,42 +908,68 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
               : imageUrls.length === 3
                 ? 'grid h-64 w-[min(100%,560px)] grid-cols-[1.35fr_1fr] grid-rows-2 gap-1.5'
                 : 'grid h-64 w-[min(100%,560px)] grid-cols-2 grid-rows-2 gap-1.5';
+          const readByPeer = participantId && msg.readBy?.some((reader) => String(reader) === String(participantId));
+          const Receipt = readByPeer ? LuCheckCheck : LuCheck;
           return (
-            <div key={idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`${imageUrls.length ? 'max-w-[82%] overflow-hidden rounded-[20px] border border-slate-200 bg-white p-1.5 shadow-[0_8px_26px_rgba(15,23,42,.1)] dark:border-surface-700 dark:bg-surface-800 sm:max-w-[70%]' : `max-w-[82%] rounded-[18px] px-4 py-2.5 shadow-[0_5px_18px_rgba(15,23,42,.06)] sm:max-w-[70%] ${isMine ? 'rounded-br-[5px] bg-gradient-to-br from-primary-600 to-violet-600 text-white' : 'rounded-bl-[5px] border border-slate-200/80 bg-white text-surface-800 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100'}`}`}>
+            <Fragment key={msg._id || idx}>{dateDivider}<div className={`project-chat-row flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+              {!isMine && <span aria-hidden="true" className="project-chat-sender md:hidden">{project?.participant?.avatar?.url ? <img src={project.participant.avatar.url} alt="" /> : participantName.charAt(0).toUpperCase()}</span>}
+              <div className={`project-chat-bubble ${isMine ? 'is-mine' : 'is-theirs'} ${imageUrls.length ? 'has-photos max-w-[82%] overflow-hidden rounded-[20px] border border-slate-200 bg-white p-1.5 shadow-[0_8px_26px_rgba(15,23,42,.1)] dark:border-surface-700 dark:bg-surface-800 sm:max-w-[70%]' : `max-w-[82%] rounded-[18px] px-4 py-2.5 shadow-[0_5px_18px_rgba(15,23,42,.06)] sm:max-w-[70%] ${isMine ? 'rounded-br-[5px] bg-gradient-to-br from-primary-600 to-violet-600 text-white' : 'rounded-bl-[5px] border border-slate-200/80 bg-white text-surface-800 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100'}`}`}>
                 {imageUrls.length > 0 && <div className={galleryClass}>{visibleImages.map((imageUrl, imageIndex) => <button key={`${imageUrl}-${imageIndex}`} type="button" onClick={() => setLightbox({ images: imageUrls, index: imageIndex })} aria-label={`Open image ${imageIndex + 1} of ${imageUrls.length}`} className={`group relative min-w-0 overflow-hidden rounded-xl bg-slate-100 text-left outline-none focus-visible:ring-4 focus-visible:ring-primary-400 dark:bg-surface-900 ${imageUrls.length === 3 && imageIndex === 0 ? 'row-span-2' : ''}`}><img src={imageUrl} alt={`Shared attachment ${imageIndex + 1}`} className={`h-full w-full object-contain transition duration-200 group-hover:scale-[1.02] ${imageUrls.length === 1 ? 'max-h-[320px] rounded-xl' : ''}`}/><span className="pointer-events-none absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/10"/>{imageIndex === 3 && imageUrls.length > 4 && <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/55 text-2xl font-bold text-white">+{imageUrls.length - 3}</span>}</button>)}</div>}
-                {msg.text && <p className={`whitespace-pre-wrap text-[13px] leading-5 ${imageUrls.length ? 'px-3 pb-1 pt-2 text-slate-800 dark:text-slate-100' : ''}`}>{msg.text}</p>}
-                <p className={`mt-1.5 text-right text-[10px] ${imageUrls.length ? 'px-2 pb-1 text-slate-400' : isMine ? 'text-indigo-100/80' : 'text-surface-400'}`}>
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {msg.attachment?.name && <button type="button" onClick={() => downloadDocument(msg)} className="project-chat-file" aria-label={`Download ${msg.attachment.name}`}><LuFileText aria-hidden="true"/><span>{msg.attachment.name}</span><LuDownload aria-hidden="true"/></button>}
+                {msg.text && <p className={`project-chat-text whitespace-pre-wrap text-[13px] leading-5 ${imageUrls.length ? 'px-3 pb-1 pt-2 text-slate-800 dark:text-slate-100' : ''}`}>{msg.text}</p>}
+                <p className={`project-chat-time mt-1.5 text-right text-[10px] ${imageUrls.length ? 'px-2 pb-1 text-slate-400' : isMine ? 'text-indigo-100/80' : 'text-surface-400'}`}>
+                  <time dateTime={msg.createdAt}>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</time>
+                  {isMine && <span role="img" aria-label={readByPeer ? 'Read' : 'Sent'}><Receipt aria-hidden="true" /></span>}
                 </p>
               </div>
-            </div>
+            </div></Fragment>
           );
         })}
+        {showCompletion && canComplete && <div className="project-chat-completion md:hidden">
+          <div className="project-chat-completion-copy"><span><LuClipboardCheck aria-hidden="true" /></span><div><p>Mark Work as Completed?</p><p>Let the client know you have finished the work.</p></div></div>
+          {completionError && <p role="alert" className="project-chat-error">{completionError}</p>}
+          <div className="project-chat-completion-actions"><button type="button" disabled={completionPending} onClick={() => { setShowCompletion(false); setCompletionError(''); }}>Not Yet</button><button type="button" disabled={completionPending} onClick={submitCompletion}><LuCheck aria-hidden="true" />{completionPending ? 'Submitting…' : 'Completed'}</button></div>
+        </div>}
+        {(completionSent || project?.workSubmittedAt) && <div className="project-chat-day md:hidden" role={completionSent ? 'status' : undefined}>Work submitted for review</div>}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
-      <div className="shrink-0 border-t border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6 sm:py-4">
+      <div className="project-chat-composer shrink-0 border-t border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6 sm:py-4">
         <div className="mx-auto w-full max-w-4xl">
-        {selectedImages.length > 0 && <div className="mb-2 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-2.5 dark:border-surface-700 dark:bg-surface-800"><div className="flex gap-2 overflow-x-auto pb-1">{selectedImages.map((image, index) => <div key={`${image.name}-${image.lastModified}-${index}`} className="relative shrink-0"><img src={imagePreviews[index]} alt={`Selected image ${index + 1}`} className="h-16 w-16 rounded-xl border border-white object-cover shadow-sm dark:border-surface-700"/><button type="button" onClick={() => setSelectedImages((current) => current.filter((_, imageIndex) => imageIndex !== index))} aria-label={`Remove image ${index + 1}`} className="absolute -right-1.5 -top-1.5 rounded-full bg-slate-900 p-1 text-white shadow hover:bg-rose-600"><HiOutlineX className="h-3 w-3"/></button></div>)}</div></div>}
-        <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-inner shadow-slate-200/40 focus-within:border-primary-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-primary-500/10 dark:border-surface-700 dark:bg-surface-900 dark:shadow-none dark:focus-within:bg-surface-900">
-          <button type="button" aria-label="Attach image" onClick={() => fileInputRef.current?.click()} className="shrink-0 rounded-xl p-2.5 text-slate-400 transition hover:bg-white hover:text-primary-600 dark:hover:bg-surface-700">
+        {messageError && <p role="alert" className="project-chat-error">{messageError}</p>}
+        {selectedImages.length > 0 && <div className="mb-2 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-2.5 dark:border-surface-700 dark:bg-surface-800"><div className="flex gap-2 overflow-x-auto pb-1">{selectedImages.map((image, index) => <div key={`${image.name}-${image.lastModified}-${index}`} className="relative shrink-0"><SelectedPhoto file={image} index={index} /><button type="button" onClick={() => setSelectedImages((current) => current.filter((_, imageIndex) => imageIndex !== index))} aria-label={`Remove image ${index + 1}`} className="absolute -right-1.5 -top-1.5 rounded-full bg-slate-900 p-1 text-white shadow hover:bg-rose-600"><HiOutlineX className="h-3 w-3"/></button></div>)}</div></div>}
+        {selectedDocument && <div className="project-chat-draft-file"><LuFileText aria-hidden="true" /><span>{selectedDocument.name}</span><button type="button" aria-label="Remove PDF" onClick={() => setSelectedDocument(null)}><HiOutlineX aria-hidden="true" /></button></div>}
+        <form onSubmit={handleSendMessage} className="project-chat-form flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-inner shadow-slate-200/40 focus-within:border-primary-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-primary-500/10 dark:border-surface-700 dark:bg-surface-900 dark:shadow-none dark:focus-within:bg-surface-900">
+          <button type="button" aria-label="Attach image" onClick={() => openPicker(fileInputRef)} className="hidden shrink-0 rounded-xl p-2.5 text-slate-400 transition hover:bg-white hover:text-primary-600 dark:hover:bg-surface-700 md:block">
             <HiOutlinePhotograph className="h-5 w-5" />
           </button>
+          <button type="button" aria-label="Attachment options" aria-expanded={composerMenu === 'attachments'} onClick={() => setComposerMenu(composerMenu === 'attachments' ? null : 'attachments')} className="project-chat-plus md:hidden"><LuPlus aria-hidden="true" /></button>
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
-          
-          <input
-            className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-slate-100"
-            type="text"
-            placeholder="Type a message..."
-            value={messageInput}
-            onChange={handleTyping}
-          />
-          <Button type="submit" aria-label="Send message" disabled={!socket || isSending || (!messageInput.trim() && selectedImages.length === 0)} className="shrink-0 rounded-xl p-2.5 shadow-md shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50">
+          <input type="file" ref={documentInputRef} className="hidden" accept="application/pdf,.pdf" onChange={handleDocumentUpload} />
+          <div className="project-chat-input flex min-w-0 flex-1 items-center">
+            <input
+              ref={composerInputRef}
+              className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-slate-100"
+              type="text"
+              aria-label="Message"
+              placeholder="Type a message..."
+              value={messageInput}
+              onChange={(event) => handleDraftChange(event.target.value)}
+            />
+            <button type="button" aria-label="Choose emoji" aria-expanded={composerMenu === 'emoji'} onClick={() => setComposerMenu(composerMenu === 'emoji' ? null : 'emoji')} className="project-chat-emoji md:hidden"><LuSmile aria-hidden="true" /></button>
+          </div>
+          <Button type="submit" aria-label="Send message" disabled={isSending || !hasDraft || (!socket && !selectedDocument)} className="project-chat-send shrink-0 rounded-xl p-2.5 shadow-md shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50">
             {isSending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/> : <HiOutlinePaperAirplane className="h-5 w-5" />}
           </Button>
         </form>
+        {composerMenu === 'attachments' && <div className="project-chat-popover md:hidden" aria-label="Attachment options"><button type="button" onClick={() => openPicker(fileInputRef)}><HiOutlinePhotograph aria-hidden="true" />Photo</button><button type="button" onClick={() => openPicker(documentInputRef)}><LuFileText aria-hidden="true" />PDF file</button></div>}
+        {composerMenu === 'emoji' && <div className="project-chat-popover project-chat-emojis md:hidden" aria-label="Emojis">{emojis.map((emoji) => <button type="button" key={emoji} onClick={() => { handleDraftChange(`${messageInput}${emoji}`); setComposerMenu(null); composerInputRef.current?.focus(); }}>{emoji}</button>)}</div>}
+        <div className="project-chat-quick md:hidden">
+          <button type="button" onClick={() => openPicker(fileInputRef)}><HiOutlinePhotograph aria-hidden="true" />Send Photo</button>
+          <button type="button" onClick={() => openPicker(documentInputRef)}><LuFileText aria-hidden="true" />Send File</button>
+          {canComplete && <button type="button" aria-expanded={showCompletion} onClick={() => { setComposerMenu(null); setShowCompletion(true); }}><LuClipboardCheck aria-hidden="true" />Mark Complete</button>}
+        </div>
         </div>
       </div>
       </section>
@@ -886,7 +1004,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
             {callType === 'video' && localStream && <video ref={localVideoRef} autoPlay playsInline muted className={`absolute bottom-4 right-4 h-24 w-36 rounded-2xl border border-white/20 bg-slate-900 object-cover shadow-xl sm:bottom-5 sm:right-5 sm:h-32 sm:w-48 ${isCameraOff ? 'opacity-0' : ''}`}/>}
           </div>
           <div className="flex items-center justify-center gap-3 px-5 py-5">
-            {callStatus === 'incoming' ? <><button type="button" onClick={declineCall} className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white transition hover:bg-rose-500" aria-label="Decline call"><HiOutlinePhoneMissedCall className="h-5 w-5"/></button><button type="button" onClick={answerCall} className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white transition hover:bg-emerald-400" aria-label="Answer call">{callType === 'video' ? <HiOutlineVideoCamera className="h-5 w-5"/> : <HiOutlinePhone className="h-5 w-5"/>}</button></> : <>
+            {callStatus === 'incoming' ? <><button type="button" onClick={declineCall} className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white transition hover:bg-rose-500" aria-label="Decline call"><HiOutlinePhoneMissedCall className="h-5 w-5"/></button><button type="button" onClick={() => answerCall(incomingCall)} className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white transition hover:bg-emerald-400" aria-label="Answer call">{callType === 'video' ? <HiOutlineVideoCamera className="h-5 w-5"/> : <HiOutlinePhone className="h-5 w-5"/>}</button></> : <>
               <button type="button" onClick={() => { const next = !isMuted; localStreamRef.current?.getAudioTracks().forEach((track) => { track.enabled = !next; }); setIsMuted(next); }} className={`relative flex h-12 w-12 items-center justify-center rounded-full transition ${isMuted ? 'bg-white text-slate-900' : 'bg-white/10 text-white hover:bg-white/20'}`} aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}><HiOutlineMicrophone className="h-5 w-5"/>{isMuted && <span className="absolute h-0.5 w-6 rotate-45 rounded bg-rose-500"/>}</button>
               {callType === 'video' && <button type="button" onClick={() => { const next = !isCameraOff; localStreamRef.current?.getVideoTracks().forEach((track) => { track.enabled = !next; }); setIsCameraOff(next); }} className={`flex h-12 w-12 items-center justify-center rounded-full transition ${isCameraOff ? 'bg-white text-slate-900' : 'bg-white/10 text-white hover:bg-white/20'}`} aria-label={isCameraOff ? 'Turn camera on' : 'Turn camera off'}><HiOutlineVideoCamera className="h-5 w-5"/></button>}
               <button type="button" onClick={endCall} className="flex h-12 w-14 items-center justify-center rounded-full bg-rose-600 text-white transition hover:bg-rose-500" aria-label="End call"><HiOutlinePhoneMissedCall className="h-5 w-5"/></button>

@@ -1,7 +1,7 @@
 import WorkerWallet from '@/pages/worker/WorkerWallet';
 
 const CustomerWallet = () => {
-  return <WorkerWallet />;
+  return <WorkerWallet customerView />;
 };
 
 export default CustomerWallet;

@@ -5,7 +5,7 @@ import { useSocket } from '@/context/SocketContext';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiOutlinePhone, HiOutlinePhoneMissedCall, HiOutlineX, HiLightningBolt, HiOutlineMicrophone, HiOutlineVideoCamera } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiOutlinePhone, HiOutlinePhoneMissedCall, HiOutlineX, HiLightningBolt, HiOutlineMicrophone, HiOutlineVideoCamera, HiOutlineBell } from 'react-icons/hi';
 
 const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
 
@@ -16,13 +16,16 @@ const navItems = [
   { icon: HiOutlineCreditCard, label: 'Wallet', path: '/worker/wallet' },
   { icon: HiOutlineChatAlt, label: 'Messages', path: '/worker/chat' },
 ];
+const mobileLabels = ['Home', 'Discover', 'Jobs', 'Wallet', 'Messages'];
 
 const WorkerLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const isChat = location.pathname === '/worker/chat';
   const socket = useSocket();
   const { user } = useAppSelector((state) => state.auth);
+  const hasUnreadMessages = useAppSelector((state) => state.chat.conversations.some((chat) => chat.unreadCount > 0));
   const [incomingCall, setIncomingCall] = useState(null);
   const [isAcceptingCall, setIsAcceptingCall] = useState(false);
   const [callStatus, setCallStatus] = useState('idle');
@@ -243,27 +246,29 @@ const WorkerLayout = () => {
       </aside>
 
       <div className="flex min-h-screen flex-col lg:pl-[266px]">
-        <header className="portal-topbar sticky top-0 z-30 flex h-[86px] items-center justify-between border-b border-violet-100/80 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-7">
-          <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark h-9 w-9">S</span><span className="font-bold tracking-tight">SkillBridge</span></Link>
+        <header className={`portal-topbar sticky top-0 z-30 flex h-[86px] items-center justify-between border-b border-violet-100/80 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-7 ${isChat ? 'max-md:h-16 max-md:border-transparent max-md:bg-[#f7f3ff] max-md:dark:bg-slate-950' : ''}`}>
+          <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><span className={isChat ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7823ef] to-[#4421cd] text-xl text-white' : 'brand-mark h-9 w-9'}>{isChat ? <HiLightningBolt /> : 'S'}</span><span className={`font-bold tracking-tight ${isChat ? 'max-md:text-[19px] max-md:text-[#130e2f] max-md:dark:text-white' : ''}`}>SkillBridge</span></Link>
           <div className="hidden items-center gap-4 lg:flex">
             <span className="flex h-[54px] w-[54px] items-center justify-center rounded-[17px] bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"><HiOutlineSparkles className="h-7 w-7" /></span>
             <div><p className="text-[18px] font-bold leading-tight text-slate-900 dark:text-white">Good to see you, {displayName}</p><p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">Find, apply, and manage your work on SkillBridge.</p></div>
           </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center rounded-full border border-violet-100 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800"><DarkModeToggle /></div>
-            <button type="button" onClick={handleLogout} aria-label="Sign out" title="Sign out" className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-slate-300 dark:hover:bg-rose-950/30 lg:hidden"><HiOutlineLogout className="h-5 w-5" /></button>
+            <div className={`flex items-center rounded-full border border-violet-100 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-800 ${isChat ? 'max-md:hidden' : ''}`}><DarkModeToggle /></div>
+            {isChat && <Link to="/worker/chat" aria-label="View conversations" className="relative grid h-9 w-9 place-items-center rounded-xl bg-white text-[#272049] shadow-sm dark:bg-slate-800 dark:text-white md:hidden"><HiOutlineBell className="h-5 w-5" />{hasUnreadMessages && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" />}</Link>}
+            <button type="button" onClick={handleLogout} aria-label="Sign out" title="Sign out" className={`rounded-lg p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-slate-300 dark:hover:bg-rose-950/30 lg:hidden ${isChat ? 'max-md:hidden' : ''}`}><HiOutlineLogout className="h-5 w-5" /></button>
             <div className="hidden h-9 w-px bg-violet-200 dark:bg-slate-700 sm:block" />
             <Link to="/worker/profile" title="Open profile" aria-label="Open profile" className="group flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-violet-50 dark:hover:bg-violet-950/40">
-              <Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" />
-              <div className="hidden sm:block"><p className="max-w-48 truncate text-[14px] font-bold text-slate-900 dark:text-slate-100">{user?.fullName || 'Worker'}</p><p className="max-w-48 truncate text-[12px] text-slate-500 dark:text-slate-400">{user?.email}</p></div>
-              <HiOutlineChevronDown className="hidden h-4 w-4 text-slate-500 sm:block" />
+              {isChat && !user?.avatar?.url && <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-200 font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200 md:hidden">{displayName.charAt(0).toUpperCase()}</span>}
+              <div className={isChat && !user?.avatar?.url ? 'hidden md:block' : ''}><Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" /></div>
+              <div className={isChat ? 'hidden md:block' : 'hidden sm:block'}><p className="max-w-48 truncate text-[14px] font-bold text-slate-900 dark:text-slate-100">{user?.fullName || 'Worker'}</p><p className="max-w-48 truncate text-[12px] text-slate-500 dark:text-slate-400">{user?.email}</p></div>
+              <HiOutlineChevronDown className={`hidden h-4 w-4 text-slate-500 ${isChat ? 'md:block' : 'sm:block'}`} />
             </Link>
           </div>
         </header>
-        <main className="portal-main worker-main mx-auto w-full max-w-[1500px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-7 lg:px-16 lg:pb-10 lg:pt-8"><Outlet /></main>
+        <main className={`portal-main worker-main mx-auto w-full max-w-[1500px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-7 lg:px-16 lg:pb-10 lg:pt-8 ${isChat ? 'max-md:p-0' : ''}`}><Outlet /></main>
       </div>
-      <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
-        {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/worker/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}><Icon className="h-5 w-5"/><span>{label}</span></NavLink>)}
+      <nav aria-label="Worker navigation" className={`portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden ${isChat ? 'max-md:pb-[max(4px,env(safe-area-inset-bottom))]' : ''}`}>
+        {navItems.map(({ icon: Icon, path }, index) => <NavLink key={path} to={path} end={path === '/worker/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''} ${isChat ? `max-md:mx-0.5 max-md:min-h-[58px] max-md:font-semibold ${isActive ? 'max-md:bg-violet-100 max-md:text-violet-700 max-md:dark:bg-violet-950/40' : ''}` : ''}`}><Icon className="h-[22px] w-[22px]"/><span>{mobileLabels[index]}</span></NavLink>)}
       </nav>
       {incomingCall && !callIsOpenInMessages && <div role="dialog" aria-modal="true" aria-label="Call" className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/75 p-3 backdrop-blur-md sm:p-6">
         <div className="relative flex max-h-[92dvh] min-h-[min(680px,85dvh)] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#101626] text-white shadow-2xl">

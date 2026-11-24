@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchJobById } from '@/store/slices/jobSlice';
+import { closeJob, deleteJob, fetchJobById } from '@/store/slices/jobSlice';
 import {
   fetchJobApplications,
   acceptApplication,
@@ -12,7 +12,7 @@ import JobSettlementFlow from '@/components/shared/JobSettlementFlow';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineChatAlt, HiOutlineRefresh } from 'react-icons/hi';
+import { HiOutlineArrowLeft, HiOutlineChatAlt, HiOutlineRefresh } from 'react-icons/hi';
 
 const formatINR = (val) =>
   new Intl.NumberFormat('en-IN', {
@@ -23,13 +23,17 @@ const formatINR = (val) =>
 
 const CustomerJobDetail = () => {
   const { id } = useParams();
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const jobsLink = { pathname: '/customer/jobs', search: state?.jobsSearch || '' };
   const dispatch = useAppDispatch();
-  const { currentJob: job, loading: jobLoading } = useAppSelector((state) => state.job);
+  const { currentJob: job, loading: jobLoading, error: jobError } = useAppSelector((state) => state.job);
   const { applications, loading: appLoading } = useAppSelector((state) => state.application);
   const { user } = useAppSelector((state) => state.auth);
 
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [managementPending, setManagementPending] = useState(false);
 
   const isOwner = job?.customer?._id === user?._id || job?.customer === user?._id;
 
@@ -72,7 +76,32 @@ const CustomerJobDetail = () => {
     setActionLoadingId(null);
   };
 
-  if (jobLoading || !job) {
+  const handleManageJob = async (action) => {
+    const deleting = action === deleteJob;
+    const prompt = deleting ? 'Delete this job listing?' : 'Close this job? Workers will no longer be able to apply.';
+    if (managementPending || !window.confirm(prompt)) return;
+
+    setErrorMsg('');
+    setManagementPending(true);
+    const result = await dispatch(action(id));
+    setManagementPending(false);
+    if (action.rejected.match(result)) {
+      setErrorMsg(result.payload || 'Could not update this job.');
+    } else if (deleting) {
+      navigate(jobsLink, { replace: true });
+    }
+  };
+
+  if (jobError && job?._id !== id) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <Link to={jobsLink} className="text-sm font-semibold text-violet-700 dark:text-violet-300">Back to My Jobs</Link>
+        <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{jobError}</p>
+      </div>
+    );
+  }
+
+  if (jobLoading || job?._id !== id) {
     return (
       <div className="flex justify-center py-20">
         <Spinner />
@@ -87,9 +116,13 @@ const CustomerJobDetail = () => {
   const contractAmount = Number(job.budget) || 0;
   const displayedAmount = isOpen ? job.budget : contractAmount;
   const isCompleted = job.status === 'Completed';
+  const isClosed = ['Cancelled', 'Closed'].includes(job.status);
 
   return (
     <div className="w-full">
+      <Link to={jobsLink} className="mb-3 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-violet-700 md:hidden dark:text-violet-300">
+        <HiOutlineArrowLeft aria-hidden="true" className="h-4 w-4" />Back to My Jobs
+      </Link>
       {/* Compact Single-Page Card */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-surface-900">
         {/* Compact Header */}
@@ -110,6 +143,8 @@ const CustomerJobDetail = () => {
                   ? 'Completed & Settled'
                   : job.status === 'Open'
                   ? 'Open for Bids'
+                  : isClosed
+                  ? job.status
                   : job.status === 'Assigned'
                   ? 'Worker Assigned'
                   : 'In Progress'}
@@ -272,7 +307,9 @@ const CustomerJobDetail = () => {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               Contract &amp; Payment
             </span>
-            {isOpen ? (
+            {isClosed ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">This job is {job.status.toLowerCase()}.</div>
+            ) : isOpen ? (
               <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-5 dark:border-violet-900/60 dark:bg-violet-950/20">
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{applications.length ? 'Proposal received' : 'Waiting for proposals'}</p>
                 <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{applications.length ? `Review worker experience and availability. The fixed job price is ${formatINR(job.budget)}.` : 'Your job is open to professionals. New applications will appear here.'}</p>
@@ -285,6 +322,12 @@ const CustomerJobDetail = () => {
           </div>
         </div>
       </div>
+      {isOwner && (isOpen || isClosed) && (
+        <div className="mt-4 flex flex-wrap gap-2 md:hidden">
+          {isOpen && <Button variant="outline" disabled={managementPending} onClick={() => handleManageJob(closeJob)}>Close Job</Button>}
+          <Button variant="outline" disabled={managementPending} onClick={() => handleManageJob(deleteJob)}>Delete Job</Button>
+        </div>
+      )}
     </div>
   );
 };

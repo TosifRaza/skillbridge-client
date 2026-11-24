@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchWallet,
@@ -11,18 +10,17 @@ import {
 } from '@/store/slices/walletSlice';
 import { updateCustomerProfile } from '@/store/slices/customerSlice';
 import { updateLocalUser } from '@/store/slices/authSlice';
+import MobileCustomerWallet from '@/pages/customer/MobileCustomerWallet';
 import {
   HiOutlineCreditCard,
   HiOutlineCurrencyRupee,
   HiOutlineArrowDown,
   HiOutlineArrowUp,
   HiOutlineShieldCheck,
-  HiOutlineClock,
   HiOutlineRefresh,
   HiOutlineCheckCircle,
   HiOutlineExclamationCircle,
   HiOutlinePlus,
-  HiOutlineExternalLink,
   HiOutlineX,
   HiOutlineDeviceMobile,
   HiOutlineLibrary,
@@ -53,11 +51,11 @@ const loadRazorpay = () =>
     script.async = true;
     script.dataset.razorpayCheckout = 'true';
     script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onerror = () => { script.remove(); resolve(false); };
     document.body.appendChild(script);
   });
 
-const WorkerWallet = () => {
+const WorkerWallet = ({ customerView = false }) => {
   const dispatch = useAppDispatch();
   const {
     wallet,
@@ -225,7 +223,7 @@ const WorkerWallet = () => {
       handler: async (response) => {
         setIsProcessingRazorpay(false);
         setShowDepositModal(false);
-        await dispatch(
+        const result = await dispatch(
           verifyDepositPayment({
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -233,7 +231,7 @@ const WorkerWallet = () => {
             amount: amountNum,
           })
         );
-        dispatch(fetchWallet());
+        if (verifyDepositPayment.fulfilled.match(result)) dispatch(fetchWallet());
       },
       modal: {
         ondismiss: () => {
@@ -315,7 +313,20 @@ const WorkerWallet = () => {
   );
 
   return (
-    <div className="mx-auto max-w-6xl animate-fade-in pb-16">
+    <div className="mx-auto max-w-6xl animate-fade-in">
+      {customerView && (
+        <MobileCustomerWallet
+          wallet={wallet}
+          transactions={transactions}
+          loading={loading}
+          error={error}
+          successMessage={successMessage}
+          onAddMoney={() => { dispatch(clearWalletNotice()); setShowDepositModal(true); }}
+          onRefresh={() => dispatch(fetchWallet())}
+          onDismiss={() => dispatch(clearWalletNotice())}
+        />
+      )}
+      <div className={customerView ? 'hidden pb-16 md:block' : 'pb-16'}>
       {/* Top Header */}
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -692,17 +703,19 @@ const WorkerWallet = () => {
         </div>
       </div>
 
+      </div>
+
       {/* Razorpay Add Money Modal */}
       {showDepositModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-surface-900 sm:p-7">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-fade-in">
+          <div role="dialog" aria-modal="true" aria-labelledby="wallet-deposit-title" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-surface-900 sm:p-7">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
                   <HiOutlineCreditCard className="h-6 w-6" />
                 </span>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white">
+                  <h3 id="wallet-deposit-title" className="font-bold text-slate-900 dark:text-white">
                     Add Money via Razorpay
                   </h3>
                   <p className="text-xs text-slate-400">
@@ -713,6 +726,7 @@ const WorkerWallet = () => {
               <button
                 type="button"
                 onClick={() => setShowDepositModal(false)}
+                aria-label="Close add money"
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
               >
                 <HiOutlineX className="h-5 w-5" />
@@ -720,8 +734,9 @@ const WorkerWallet = () => {
             </div>
 
             <form onSubmit={handleInitiateRazorpayDeposit} className="mt-5 space-y-4">
+              {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">{error}</p>}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label htmlFor="wallet-deposit-amount" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Enter Amount to Deposit (₹)
                 </label>
                 <div className="relative">
@@ -729,6 +744,7 @@ const WorkerWallet = () => {
                     ₹
                   </span>
                   <input
+                    id="wallet-deposit-amount"
                     type="number"
                     min="10"
                     value={depositAmount}

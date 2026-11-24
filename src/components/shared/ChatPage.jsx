@@ -4,7 +4,6 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchConversations, markConversationRead } from '@/store/slices/chatSlice';
 import ChatInterface from '@/components/shared/ChatInterface';
 import Avatar from '@/components/ui/Avatar';
-import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import { HiOutlineChatAlt, HiOutlineSearch, HiOutlineShieldCheck } from 'react-icons/hi';
@@ -17,7 +16,7 @@ const getPreview = (message, userId) => {
     return `${callType} ${state}`;
   }
   const imageCount = message.imageUrls?.length || (message.imageUrl ? 1 : 0);
-  const attachmentPreview = imageCount > 1 ? `${imageCount} photos shared` : imageCount === 1 ? 'Photo shared' : 'New message';
+  const attachmentPreview = message.attachment?.name || (imageCount > 1 ? `${imageCount} photos shared` : imageCount === 1 ? 'Photo shared' : 'New message');
   const text = message.text?.trim() || attachmentPreview;
   const senderId = message.sender?._id || message.sender;
   return senderId && userId && senderId.toString() === userId.toString() ? `You: ${text}` : text;
@@ -36,36 +35,31 @@ const ChatPage = ({ userRole }) => {
   const { conversations, loading } = useAppSelector((state) => state.chat);
   const { user } = useAppSelector((state) => state.auth);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeConvo, setActiveConvo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => { dispatch(fetchConversations()); }, [dispatch]);
 
   const requestedConversationId = searchParams.get('conversationId');
+  const selectedConversation = conversations.find((conversation) => conversation.conversationId === requestedConversationId);
+  const activeConvo = selectedConversation?.conversationId;
   useEffect(() => {
-    if (!requestedConversationId || requestedConversationId === activeConvo || !conversations.some((conversation) => conversation.conversationId === requestedConversationId)) return;
-    setActiveConvo(requestedConversationId);
-    dispatch(markConversationRead(requestedConversationId));
-  }, [activeConvo, dispatch, requestedConversationId, conversations]);
+    if (activeConvo) dispatch(markConversationRead(activeConvo));
+  }, [activeConvo, dispatch]);
 
   const visibleConversations = useMemo(() => conversations.filter((conversation) => {
     const query = searchTerm.trim().toLowerCase();
     return !query || `${conversation.title || ''} ${conversation.participant?.fullName || ''} ${conversation.participant?.email || ''}`.toLowerCase().includes(query);
   }), [conversations, searchTerm]);
 
-  const selectedConversation = conversations.find((conversation) => conversation.conversationId === activeConvo);
   const handleSelectConversation = (conversation) => {
-    setActiveConvo(conversation.conversationId);
     setSearchParams({ conversationId: conversation.conversationId }, { replace: true });
-    dispatch(markConversationRead(conversation.conversationId));
   };
   const handleBackToConversations = () => {
-    setActiveConvo(null);
     setSearchParams({}, { replace: true });
   };
 
   return (
-    <div className="flex h-[calc(100dvh-12rem)] min-h-[500px] overflow-hidden rounded-[26px] border border-slate-200/80 bg-white shadow-[0_18px_60px_rgba(31,41,86,.08)] dark:border-surface-700 dark:bg-surface-800 lg:min-h-[600px]">
+    <div className="project-chat-page flex h-[calc(100dvh-12rem)] min-h-[500px] overflow-hidden rounded-[26px] border border-slate-200/80 bg-white shadow-[0_18px_60px_rgba(31,41,86,.08)] dark:border-surface-700 dark:bg-surface-800 lg:min-h-[600px]">
       <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col border-r border-slate-200/80 bg-[#fbfcff] dark:border-surface-700 dark:bg-surface-900 md:w-[300px] lg:w-[340px]`}>
         <div className="border-b border-slate-200/80 bg-white px-5 py-5 dark:border-surface-700 dark:bg-surface-800">
           <div className="flex items-center justify-between">
@@ -106,7 +100,7 @@ const ChatPage = ({ userRole }) => {
 
       <div className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>
         {selectedConversation ? (
-          <ChatInterface conversationId={selectedConversation.conversationId} otherUserEmail={selectedConversation.participant?.email} project={selectedConversation} userRole={userRole} onBack={handleBackToConversations} />
+          <ChatInterface key={activeConvo} conversationId={activeConvo} otherUserEmail={selectedConversation.participant?.email} project={selectedConversation} projectHref={`/${userRole === 'provider' ? 'worker' : 'customer'}/jobs/${selectedConversation._id}`} userRole={userRole} onBack={handleBackToConversations} />
         ) : (
           <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,rgba(99,102,241,.09),transparent_42%),linear-gradient(145deg,#fbfcff,#f5f7fc)] p-8 text-center dark:bg-[radial-gradient(ellipse_at_50%_45%,rgba(99,102,241,.14),transparent_42%),linear-gradient(145deg,#111827,#0f172a)]">
             <div className="mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-[26px] border border-indigo-100 bg-white text-primary-500 shadow-[0_12px_35px_rgba(99,102,241,.15)] dark:border-surface-700 dark:bg-surface-800"><HiOutlineChatAlt className="h-9 w-9" /></div>

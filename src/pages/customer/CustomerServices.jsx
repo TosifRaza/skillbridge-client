@@ -90,7 +90,17 @@ const CustomerServices = () => {
         <section>
           <div className="mb-3 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Categories</h2><button type="button" onClick={() => setActiveCategory('All')} className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></button></div>
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {servicesWithRatings.map((service) => <button key={service.id} type="button" onClick={() => setActiveCategory(service.name)} className={`flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-[18px] border bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(25,30,70,.05)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}><span className="flex h-9 w-10 items-center justify-center"><ServiceIcon serviceId={service.id} className="h-8 w-8" /></span><span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span></button>)}
+            {servicesWithRatings.map((service) => (
+              <button
+                key={service.id}
+                type="button"
+                onClick={() => setActiveCategory(service.name)}
+                className={`flex min-h-[88px] flex-col items-center justify-center gap-1 rounded-[18px] border bg-white px-1 py-1 text-center shadow-[0_4px_12px_rgba(25,30,70,.05)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}
+              >
+                <ServiceIcon serviceId={service.id} className="h-11 w-11 max-w-full shrink-0" />
+                <span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span>
+              </button>
+            ))}
           </div>
         </section>
 

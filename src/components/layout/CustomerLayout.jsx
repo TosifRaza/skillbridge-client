@@ -1,9 +1,10 @@
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineLogout, HiOutlinePlus, HiOutlineCreditCard, HiOutlineSearch, HiOutlineBell, HiLightningBolt, HiOutlineUser } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineLogout, HiOutlinePlus, HiOutlineCreditCard, HiOutlineSearch, HiOutlineBell, HiLightningBolt } from 'react-icons/hi';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/customer/home' },
@@ -16,6 +17,11 @@ const navItems = [
 const CustomerLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const isJobsList = Boolean(useMatch('/customer/jobs'));
+  const isWallet = Boolean(useMatch('/customer/wallet'));
+  const isChat = Boolean(useMatch('/customer/chat'));
+  const compactHeader = isJobsList || isWallet || isChat;
+  const [jobsWithOffers, setJobsWithOffers] = useState(null);
   const { user } = useAppSelector((state) => state.auth);
   const { proposals = [] } = useAppSelector((state) => state.customer);
   const handleLogout = async () => { await dispatch(logoutUser()); navigate('/auth/login'); };
@@ -25,12 +31,13 @@ const CustomerLayout = () => {
     { icon: HiOutlineSearch, label: 'Discover', path: '/customer/services' },
     { icon: HiOutlineBriefcase, label: 'Jobs', path: '/customer/jobs' },
     { icon: HiOutlineCreditCard, label: 'Wallet', path: '/customer/wallet' },
-    { icon: HiOutlineUser, label: 'Profile', path: '/customer/profile' },
+    { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
   ];
   const pendingProposalCount = proposals.filter((proposal) => proposal.status === 'Pending').length;
+  const hasJobUpdates = isJobsList && jobsWithOffers !== null ? jobsWithOffers > 0 : pendingProposalCount > 0;
 
   return (
-      <div className="portal-shell min-h-screen bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100">
+      <div className={`portal-shell min-h-screen bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100 ${compactHeader ? 'max-md:bg-[#f8f6fd] max-md:dark:bg-slate-950' : ''}`}>
         <aside className="portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col text-white lg:flex">
           <Link to="/customer/home" className="flex h-[68px] items-center gap-3 px-6">
             <span className="brand-mark h-9 w-9 text-sm">S</span><span className="text-[18px] font-bold tracking-tight">SkillBridge</span>
@@ -58,27 +65,39 @@ const CustomerLayout = () => {
         </aside>
 
         <div className="flex min-h-screen flex-col lg:pl-[264px]">
-          <header className="portal-topbar sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:h-[62px] sm:px-6 lg:px-8">
-            <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden"><span className="brand-mark flex h-10 w-10 items-center justify-center rounded-[14px] text-xl"><HiLightningBolt /></span><span className="font-bold tracking-tight text-[17px]">SkillBridge</span></Link>
+          <header className={`portal-topbar sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:h-[62px] sm:px-6 lg:px-8 ${compactHeader ? 'max-md:border-transparent max-md:bg-[#f8f6fd]/95 max-md:dark:bg-slate-950/95' : ''} ${isChat ? 'max-md:h-16' : isWallet ? 'max-md:h-[65px]' : ''}`}>
+            <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden">
+              {isWallet && <span aria-hidden="true" className="grid h-[35px] w-[35px] place-items-center rounded-full bg-gradient-to-br from-[#8249fa] to-[#500cca] text-base font-bold text-white md:hidden">S</span>}
+              <span className={`${isJobsList || isChat ? 'flex h-10 w-10 items-center justify-center rounded-[13px] bg-gradient-to-br from-[#7423f2] to-[#4012cd] text-2xl text-white' : 'brand-mark flex h-10 w-10 items-center justify-center rounded-[14px] text-xl'} ${isWallet ? 'max-md:hidden' : ''}`}><HiLightningBolt /></span>
+              <span className={`font-bold tracking-tight ${compactHeader ? 'text-[19px] text-[#11112d] dark:text-white' : 'text-[17px]'}`}>SkillBridge</span>
+            </Link>
             <div className="hidden lg:block"><p className="text-[11px] font-medium text-slate-400">CUSTOMER WORKSPACE</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
             <div className="ml-auto flex items-center gap-2.5 sm:gap-4">
-              <DarkModeToggle />
-              <button type="button" onClick={() => navigate('/customer/jobs')} aria-label={pendingProposalCount ? `${pendingProposalCount} new proposals` : 'View your jobs'} title="View job updates" className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:bg-indigo-50 dark:border-slate-700 dark:bg-surface-800 dark:text-white lg:hidden"><HiOutlineBell className="h-5 w-5" />{pendingProposalCount > 0 && <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-500 dark:border-surface-800" />}</button>
+              <div className={compactHeader ? 'hidden md:block' : ''}><DarkModeToggle /></div>
+              <Link to={hasJobUpdates ? '/customer/jobs?view=applied' : '/customer/jobs'} aria-label={hasJobUpdates ? 'View jobs with new offers' : 'View your jobs'} title="View job updates" className={`relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:bg-indigo-50 dark:border-slate-700 dark:bg-surface-800 dark:text-white lg:hidden ${isWallet ? 'max-md:border-transparent max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent' : ''}`}>
+                <HiOutlineBell className={isWallet ? 'h-6 w-6 md:h-5 md:w-5' : 'h-5 w-5'} />
+                {hasJobUpdates && <span className={`absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-surface-800 ${isWallet ? 'bg-violet-600' : 'bg-rose-500'}`} />}
+              </Link>
               <button type="button" onClick={handleLogout} aria-label="Sign out" title="Sign out" className="hidden rounded-lg p-2 text-surface-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-surface-300 dark:hover:bg-rose-950/30 lg:hidden"><HiOutlineLogout className="h-5 w-5" /></button>
               <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-700 sm:block" />
               <Link to="/customer/profile" title="Open profile" className="group flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-indigo-50 dark:hover:bg-indigo-950/40">
-                <Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" />
-                <div className="hidden sm:block">
+                {compactHeader && !user?.avatar?.url && <span className={`flex items-center justify-center rounded-full bg-violet-200 text-base font-bold text-violet-950 dark:bg-violet-900 dark:text-violet-100 md:hidden ${isWallet ? 'h-9 w-9 bg-gradient-to-br from-fuchsia-100 to-violet-200 text-violet-700' : 'h-10 w-10'}`}>{displayName.charAt(0).toUpperCase()}</span>}
+                <div className={compactHeader && !user?.avatar?.url ? 'hidden md:block' : ''}><Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" /></div>
+                <div className={compactHeader ? 'hidden md:block' : 'hidden sm:block'}>
                   <p className="max-w-44 truncate text-xs font-semibold text-slate-800 transition group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{user?.fullName || 'Customer'}</p>
                   <p className="max-w-44 truncate text-[10px] text-slate-400">{user?.email}</p>
                 </div>
               </Link>
             </div>
           </header>
-          <main className="portal-main mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-6 lg:pb-8"> <Outlet /> </main>
+          <main className={`portal-main mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 pb-24 sm:px-5 sm:pt-4 lg:px-6 lg:pb-8 ${isChat ? 'max-md:p-0' : ''}`}><Outlet context={setJobsWithOffers} /></main>
         </div>
-        <nav aria-label="Customer navigation" className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
-          {mobileNavItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mx-0.5 flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[18px] px-1 text-[10px] font-semibold transition ${isActive ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' : 'text-slate-500 dark:text-slate-400'}`}><Icon className="h-[22px] w-[22px]"/><span>{label}</span></NavLink>)}
+        <nav aria-label="Customer navigation" className={`fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden ${isWallet ? 'max-md:pt-1.5 max-md:shadow-none' : ''}`}>
+          {mobileNavItems.map(({ icon: Icon, label, path }) => (
+            <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mx-0.5 flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[18px] px-1 text-[10px] font-semibold transition ${isWallet ? 'max-md:min-h-[52px] max-md:gap-0.5 max-md:text-[11px]' : ''} ${isActive ? `${isWallet ? 'md:bg-violet-50 md:dark:bg-violet-950/50' : 'bg-violet-50 dark:bg-violet-950/50'} text-violet-700 dark:text-violet-300` : 'text-slate-500 dark:text-slate-400'}`}>
+              {({ isActive }) => <><span className={isWallet ? `grid min-h-[25px] w-full max-w-[56px] place-items-center rounded-full ${isActive ? 'max-md:bg-violet-100 max-md:dark:bg-violet-950/60' : ''}` : ''}><Icon className="h-[22px] w-[22px]" /></span><span>{label}</span></>}
+            </NavLink>
+          ))}
         </nav>
       </div>
   );

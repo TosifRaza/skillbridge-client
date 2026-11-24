@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchMyJobs, deleteJob, closeJob } from '@/store/slices/jobSlice';
@@ -7,6 +7,7 @@ import Tabs from '@/components/ui/Tabs';
 import EmptyState from '@/components/ui/EmptyState';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
+import MobileMyJobs from './MobileMyJobs';
 import {
   HiOutlinePlus,
   HiOutlineTrash,
@@ -23,7 +24,15 @@ import {
   HiOutlineRefresh,
 } from 'react-icons/hi';
 
-const MyJobs = () => {
+const mobileQuery = '(max-width: 767px)';
+const subscribeToMobile = (callback) => {
+  const media = window.matchMedia(mobileQuery);
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+};
+const isMobileViewport = () => window.matchMedia(mobileQuery).matches;
+
+const DesktopMyJobs = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { jobs, loading } = useAppSelector((state) => state.job);
@@ -376,6 +385,11 @@ const MyJobs = () => {
       </div>
     </div>
   );
+};
+
+const MyJobs = () => {
+  const isMobile = useSyncExternalStore(subscribeToMobile, isMobileViewport, () => false);
+  return isMobile ? <MobileMyJobs /> : <DesktopMyJobs />;
 };
 
 export default MyJobs;

@@ -223,6 +223,7 @@ import axiosInstance from '@/api/axiosInstance';
 const initialState = { 
   conversations: [], // Ensure this exists
   messages: [], 
+  historyRequestId: null,
   loading: false, 
   error: null 
 };
@@ -275,6 +276,13 @@ const chatSlice = createSlice({
       const conversation = state.conversations.find((item) => item.conversationId === action.payload);
       if (conversation) conversation.unreadCount = 0;
     },
+    markMessagesRead: (state, action) => {
+      const { conversationId, readBy } = action.payload;
+      for (const message of state.messages) {
+        if (message.conversationId !== conversationId || message.readBy?.includes(readBy)) continue;
+        message.readBy = [...(message.readBy || []), readBy];
+      }
+    },
     addSocketMessage: (state, action) => {
       const incoming = action.payload;
       const existingIndex = state.messages.findIndex((message) => message._id === incoming._id);
@@ -293,6 +301,9 @@ const chatSlice = createSlice({
     },
     clearChat: (state) => {
       state.messages = [];
+      state.error = null;
+      if (state.historyRequestId) state.loading = false;
+      state.historyRequestId = null;
     }
   },
   extraReducers: (builder) => {
@@ -303,17 +314,29 @@ const chatSlice = createSlice({
         state.conversations = action.payload || []; // Ensure it's always an array
       })
       .addCase(fetchConversations.rejected, (state) => { state.loading = false; state.conversations = []; })
-      .addCase(fetchChatHistory.pending, (state) => { state.loading = true; })
+      .addCase(fetchChatHistory.pending, (state, action) => {
+        state.loading = true;
+        state.error = null;
+        state.historyRequestId = action.meta.requestId;
+      })
       .addCase(fetchChatHistory.fulfilled, (state, action) => {
+        if (state.historyRequestId !== action.meta.requestId) return;
         state.loading = false;
-        state.messages = action.payload || [];
+        state.historyRequestId = null;
+        const history = new Map((action.payload || []).map((message) => [message._id, message]));
+        for (const message of state.messages) {
+          if (message.conversationId === action.meta.arg) history.set(message._id, message);
+        }
+        state.messages = [...history.values()].sort((first, second) => new Date(first.createdAt) - new Date(second.createdAt));
       })
       .addCase(fetchChatHistory.rejected, (state, action) => {
+        if (state.historyRequestId !== action.meta.requestId) return;
         state.loading = false;
+        state.historyRequestId = null;
         state.error = action.payload;
       });
   },
 });
 
-export const { addSocketMessage, updateSocketMessage, clearChat, markConversationRead } = chatSlice.actions;
+export const { addSocketMessage, updateSocketMessage, clearChat, markConversationRead, markMessagesRead } = chatSlice.actions;
 export default chatSlice.reducer;
