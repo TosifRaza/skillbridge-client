@@ -20,6 +20,7 @@ import {
   HiOutlineDocumentText,
   HiOutlineHome,
   HiOutlinePhotograph,
+  HiOutlineChevronDown,
 } from 'react-icons/hi';
 
 const statusVariant = {
@@ -66,6 +67,7 @@ const WorkerJobDetail = () => {
   const { currentJob: job, loading, error } = useAppSelector((state) => state.job);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState({ loading: true, applied: false, status: null });
 
   useEffect(() => {
@@ -122,26 +124,26 @@ const WorkerJobDetail = () => {
     <div className="mx-auto w-full max-w-[1320px] animate-fade-in pb-8">
       <button
         onClick={() => navigate('/worker/jobs')}
-        className="mb-6 inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-[15px] font-semibold text-violet-700 transition hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-300 dark:hover:text-violet-100"
+        className="mb-7 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-[15px] font-semibold text-violet-700 transition hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-300 dark:hover:text-violet-100"
       >
         <HiOutlineArrowLeft className="h-5 w-5" aria-hidden="true" /> Back to Jobs
       </button>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.98fr)_minmax(350px,1fr)] lg:gap-[30px]">
-        <Card className="relative overflow-hidden rounded-[24px] border-violet-100/90 bg-white/90 p-5 shadow-[0_14px_44px_rgba(63,45,119,.09)] backdrop-blur sm:p-7 lg:p-[30px] dark:border-slate-700 dark:bg-surface-800">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.84fr)_minmax(350px,1fr)] lg:gap-[30px]">
+        <Card className="relative overflow-hidden rounded-[22px] border-violet-100/90 bg-white/90 p-4 shadow-[0_12px_36px_rgba(63,45,119,.08)] backdrop-blur sm:p-6 lg:p-[26px] dark:border-slate-700 dark:bg-surface-800">
           <div className="pointer-events-none absolute -right-10 -top-16 hidden h-64 w-64 rounded-full bg-gradient-to-br from-violet-100/80 via-purple-100/70 to-transparent lg:block" />
           <div className="pointer-events-none absolute right-12 top-10 hidden text-violet-300/80 lg:block"><HiOutlineHome className="h-20 w-20" /></div>
 
           <div className="relative z-10 flex flex-wrap items-center gap-x-7 gap-y-3">
-            <Badge variant={statusVariant[job.status] || 'gray'} className="rounded-full px-4 py-1.5 text-sm">{job.status}</Badge>
+            <Badge variant={statusVariant[job.status] || 'gray'} className="rounded-full px-4 py-1 text-[13px]">{job.status}</Badge>
             <span className="text-[14px] text-slate-500 dark:text-slate-400">Posted {formatDate(job.createdAt)}</span>
           </div>
-          <div className="relative z-10 mt-6 max-w-[80%] sm:max-w-[78%]">
-            <h1 className="break-words text-[30px] font-extrabold leading-[1.1] tracking-tight text-[#11123d] sm:text-[38px] lg:text-[42px] dark:text-white">{job.title}</h1>
-            <p className="mt-2.5 line-clamp-1 text-[16px] font-medium text-slate-500 dark:text-slate-300">{summary}</p>
+          <div className="relative z-10 mt-5 max-w-[80%] sm:max-w-[78%]">
+            <h1 className="break-words text-[26px] font-extrabold leading-[1.1] tracking-tight text-[#11123d] sm:text-[30px] lg:text-[32px] dark:text-white">{job.title}</h1>
+            <p className="mt-2 line-clamp-1 text-[15px] font-medium text-slate-500 dark:text-slate-300">{summary}</p>
           </div>
 
-          <section className="relative z-10 mt-7" aria-label="Job photos">
+          <section className="relative z-10 mt-6" aria-label="Job photos">
             {images.length === 0 ? (
               <div className="flex min-h-[250px] flex-col items-center justify-center rounded-[18px] border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 px-5 text-center dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-violet-600 shadow-sm dark:bg-slate-800 dark:text-violet-300"><HiOutlinePhotograph className="h-7 w-7" /></span>
@@ -150,24 +152,24 @@ const WorkerJobDetail = () => {
               </div>
             ) : images.length === 1 ? (
               <a href={selectedImage.url} target="_blank" rel="noreferrer" aria-label="Open job photo in a new tab" className="group relative block overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-700 dark:bg-slate-900">
-                <img src={selectedImage.url} alt="Client provided job photo" className="h-[250px] w-full object-cover sm:h-[326px]" />
+                <img src={selectedImage.url} alt="Client provided job photo" className="h-[240px] w-full object-cover sm:h-[304px]" />
                 <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white">View full photo</span>
               </a>
             ) : (
-              <div className="grid gap-3 sm:h-[326px] sm:grid-cols-[minmax(0,2fr)_minmax(120px,.68fr)]">
-                <a href={selectedImage.url} target="_blank" rel="noreferrer" aria-label="Open selected job photo in a new tab" className="group relative block h-[250px] overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-full dark:border-slate-700 dark:bg-slate-900">
+              <div className="grid gap-3 sm:h-[304px] sm:grid-cols-[minmax(0,2fr)_minmax(120px,.68fr)]">
+                <a href={selectedImage.url} target="_blank" rel="noreferrer" aria-label="Open selected job photo in a new tab" className="group relative block h-[240px] overflow-hidden rounded-[16px] border border-violet-100 bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-full dark:border-slate-700 dark:bg-slate-900">
                   <img src={selectedImage.url} alt={`Client provided job photo ${selectedImageIndex + 1}`} className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
                   <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white">View full photo</span>
                 </a>
                 <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-col sm:overflow-x-hidden sm:overflow-y-auto sm:pb-0" aria-label="Choose a job photo">
-                  {images.map((image, index) => index === selectedImageIndex ? null : (
+                  {images.map((image, index) => (
                     <button
                       key={image._id || image.public_id || image.url || index}
                       type="button"
                       onClick={() => setSelectedImageIndex(index)}
                       aria-label={`Show job photo ${index + 1}`}
-                      aria-pressed={false}
-                      className="h-[82px] min-w-[112px] flex-1 overflow-hidden rounded-[14px] border-2 border-transparent bg-slate-100 transition hover:border-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-auto sm:min-h-0 sm:min-w-0"
+                      aria-pressed={index === selectedImageIndex}
+                      className={`h-[82px] min-w-[112px] flex-1 overflow-hidden rounded-[14px] border-2 bg-slate-100 transition hover:border-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:h-auto sm:min-h-0 sm:min-w-0 ${index === selectedImageIndex ? 'border-violet-600 shadow-[0_0_0_2px_rgba(124,58,237,.12)]' : 'border-transparent'}`}
                     >
                       <img src={image.url} alt="" loading="lazy" className="h-full w-full object-cover" />
                     </button>
@@ -178,50 +180,49 @@ const WorkerJobDetail = () => {
           </section>
 
           <section className="mt-6 border-t border-violet-100 pt-5 dark:border-slate-700">
-            <div className="flex items-start gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><HiOutlineDocumentText className="h-6 w-6" /></span>
-              <div className="min-w-0 pt-0.5">
-                <h2 className="text-[18px] font-extrabold text-[#11123d] dark:text-white">Job Description</h2>
-                <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-[1.6] text-slate-600 dark:text-slate-300">{job.description}</p>
-              </div>
-            </div>
+            <button type="button" aria-expanded={descriptionOpen} onClick={() => setDescriptionOpen((open) => !open)} className="flex min-h-11 w-full items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><HiOutlineDocumentText className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-[16px] font-extrabold text-[#11123d] dark:text-white">Job Description</span><span className="mt-0.5 block truncate text-[12px] text-slate-500 dark:text-slate-400">{summary}</span></span>
+              <HiOutlineChevronDown className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${descriptionOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {descriptionOpen && <p className="whitespace-pre-wrap pb-1 pl-[52px] pr-2 pt-2 text-[13px] leading-[1.55] text-slate-600 dark:text-slate-300">{job.description}</p>}
           </section>
 
           {accepted && ['Assigned', 'In-Progress', 'Completed'].includes(job.status) && <div className="mt-6"><WorkCompletionPaymentCard jobId={id} viewerRole="provider" onUpdated={() => dispatch(fetchJobById(id))} /></div>}
         </Card>
 
         <aside className="space-y-5 lg:sticky lg:top-[110px]">
-          <Card className="rounded-[23px] border-violet-100/90 bg-white/90 p-5 shadow-[0_14px_44px_rgba(63,45,119,.08)] backdrop-blur sm:p-6 dark:border-slate-700 dark:bg-surface-800">
-            <div className="flex items-center justify-between gap-3 border-b border-violet-100 pb-4 dark:border-slate-700">
+          <Card className="rounded-[20px] border-violet-100/90 bg-white/90 p-4 shadow-[0_12px_34px_rgba(63,45,119,.07)] backdrop-blur sm:p-5 dark:border-slate-700 dark:bg-surface-800">
+            <div className="flex items-center justify-between gap-3 border-b border-violet-100 pb-3 dark:border-slate-700">
               <div className="flex items-center gap-4">
-                <span className="flex h-[58px] w-[58px] items-center justify-center rounded-[17px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><HiOutlineCreditCard className="h-7 w-7" /></span>
-                <span className="text-[18px] font-medium text-slate-800 dark:text-slate-200">Budget</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><HiOutlineCreditCard className="h-5 w-5" /></span>
+                <span className="text-[16px] font-semibold text-slate-800 dark:text-slate-200">Budget</span>
               </div>
-              <span className="text-[34px] font-extrabold tracking-tight text-violet-700 dark:text-violet-300">{formatBudget(job.budget)}</span>
+              <span className="text-[28px] font-extrabold tracking-tight text-violet-700 dark:text-violet-300">{formatBudget(job.budget)}</span>
             </div>
             <dl className="divide-y divide-violet-100 dark:divide-slate-700">
-              <div className="flex min-h-[54px] items-center gap-4 py-2.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineCalendar className="h-6 w-6" /></span>
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[15px] font-medium text-slate-500 dark:text-slate-400">Deadline:</dt><dd className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">{formatDate(job.deadline)}</dd></div>
+              <div className="flex min-h-[40px] items-center gap-3 py-1">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineCalendar className="h-5 w-5" /></span>
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[14px] font-medium text-slate-500 dark:text-slate-400">Deadline:</dt><dd className="text-[14px] font-semibold text-slate-800 dark:text-slate-100">{formatDate(job.deadline)}</dd></div>
               </div>
-              <div className="flex min-h-[54px] items-center gap-4 py-2.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineLocationMarker className="h-6 w-6" /></span>
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dd className="break-words text-[15px] font-semibold text-slate-800 dark:text-slate-100">{location}</dd></div>
+              <div className="flex min-h-[40px] items-center gap-3 py-1">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineLocationMarker className="h-6 w-6" /></span>
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dd className="break-words text-[14px] font-semibold text-slate-800 dark:text-slate-100">{location}</dd></div>
               </div>
-              <div className="flex min-h-[54px] items-center gap-4 pt-2.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineTag className="h-6 w-6" /></span>
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[15px] font-medium text-slate-500 dark:text-slate-400">Type:</dt><dd className="text-[15px] font-semibold capitalize text-slate-800 dark:text-slate-100">{job.serviceType || 'local'}</dd></div>
+              <div className="flex min-h-[40px] items-center gap-3 pt-1">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300"><HiOutlineTag className="h-5 w-5" /></span>
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[14px] font-medium text-slate-500 dark:text-slate-400">Type:</dt><dd className="text-[15px] font-semibold capitalize text-slate-800 dark:text-slate-100">{job.serviceType || 'local'}</dd></div>
               </div>
             </dl>
           </Card>
 
           {job.status === 'Open' && applied ? (
-            <Card className="flex min-h-[390px] flex-col justify-center rounded-[23px] border-violet-100/90 bg-gradient-to-br from-white via-white to-violet-50/80 p-6 text-center shadow-[0_14px_44px_rgba(63,45,119,.08)] sm:p-7 dark:border-slate-700 dark:from-surface-800 dark:to-slate-900">
-              <span className="mx-auto flex h-[66px] w-[66px] items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300"><HiOutlineCheckCircle className="h-11 w-11" /></span>
-              <h2 className="mt-3 text-[24px] font-extrabold tracking-tight text-[#11123d] dark:text-white">{applicationTitle}</h2>
-              <p className="mx-auto mt-1.5 max-w-[290px] text-[14px] leading-5 text-slate-500 dark:text-slate-400">{applicationMessage}</p>
+            <Card className="flex min-h-[322px] flex-col justify-center rounded-[20px] border-violet-100/90 bg-gradient-to-br from-white via-white to-violet-50/80 p-5 text-center shadow-[0_12px_34px_rgba(63,45,119,.07)] sm:p-6 dark:border-slate-700 dark:from-surface-800 dark:to-slate-900">
+              <span className="mx-auto flex h-[56px] w-[56px] items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300"><HiOutlineCheckCircle className="h-9 w-9" /></span>
+              <h2 className="mt-2.5 text-[21px] font-extrabold tracking-tight text-[#11123d] dark:text-white">{applicationTitle}</h2>
+              <p className="mx-auto mt-1 max-w-[290px] text-[13px] leading-5 text-slate-500 dark:text-slate-400">{applicationMessage}</p>
               <ApplicationProgress status={applicationStatus.status || 'Pending'} />
-              <Button variant="secondary" disabled className="mt-6 min-h-[50px] w-full rounded-[15px] text-[15px]">Already Applied</Button>
+              <Button variant="secondary" disabled className="mt-5 min-h-[44px] w-full rounded-[13px] text-[14px]">Already Applied</Button>
             </Card>
           ) : job.status === 'Open' ? (
             <Card className="rounded-[23px] border-violet-100/90 bg-white/90 p-5 shadow-[0_14px_44px_rgba(63,45,119,.08)] sm:p-6 dark:border-slate-700 dark:bg-surface-800">
