@@ -130,7 +130,8 @@ const CustomerJobDetail = () => {
   }
 
   const acceptedApp = applications.find((a) => a.status === 'Accepted');
-  const hiredWorker = job.hiredProvider || acceptedApp?.worker || qrDetails?.worker;
+  const qrWorker = qrDetails?.worker?.id ? qrDetails.worker : null;
+  const hiredWorker = job.hiredProvider || acceptedApp?.worker || qrWorker;
   const contractAmount = acceptedApp?.bidAmount || job.paidAmount || qrDetails?.amount || job.budget;
   const isCompleted = job.status === 'Completed';
   const workSubmitted = Boolean(job.workSubmittedAt);
