@@ -52,12 +52,18 @@ const toneClasses = {
   rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300',
 };
 
-const ContractPaymentPanel = ({ jobId, viewerRole, onUpdated }) => {
+const ContractPaymentPanel = ({ jobId, viewerRole, expectedBudget, expectedContractAmount, onUpdated }) => {
   const { user } = useAppSelector((state) => state.auth);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [error, setError] = useState('');
+  const priceMismatch = Boolean(payment && (
+    payment.priceMismatch
+    ||
+    (expectedContractAmount != null && Number(payment.grossAmount) !== Number(expectedContractAmount))
+    || (expectedBudget != null && Number(payment.jobBudget) !== Number(expectedBudget))
+  ));
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -89,6 +95,10 @@ const ContractPaymentPanel = ({ jobId, viewerRole, onUpdated }) => {
   }, [jobId]);
 
   const handlePay = async () => {
+    if (priceMismatch) {
+      setError('Payment is paused because the contract and job prices do not match. Refresh both portals and try again.');
+      return;
+    }
     setAction('pay');
     setError('');
     try {
@@ -149,30 +159,40 @@ const ContractPaymentPanel = ({ jobId, viewerRole, onUpdated }) => {
 
   const content = statusContent[payment.status] || statusContent.NotStarted;
   const isCustomer = viewerRole === 'customer';
+  const shownContractAmount = priceMismatch ? expectedContractAmount : payment.grossAmount;
+  const shownBudget = expectedBudget ?? payment.jobBudget;
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_12px_35px_rgba(15,23,42,.06)] dark:border-slate-800 dark:bg-surface-900">
       <div className="bg-[#171d3c] px-5 py-5 text-white">
-        <div className="flex items-start justify-between gap-3"><div><p className="text-[9px] font-bold uppercase tracking-[.18em] text-indigo-200">SkillBridge protected payment</p><h3 className="mt-1.5 text-lg font-bold">{formatCurrency(payment.grossAmount)}</h3></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300"><HiOutlineShieldCheck className="h-5 w-5" /></span></div>
+        <div className="flex items-start justify-between gap-3"><div><p className="text-[9px] font-bold uppercase tracking-[.18em] text-indigo-200">SkillBridge protected payment</p><h3 className="mt-1.5 text-lg font-bold">{formatCurrency(shownContractAmount)}</h3></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300"><HiOutlineShieldCheck className="h-5 w-5" /></span></div>
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full transition-all ${payment.status === 'Released' ? 'w-full bg-emerald-400' : ['Funded', 'WorkSubmitted', 'ReleasePending'].includes(payment.status) ? 'w-2/3 bg-indigo-300' : 'w-1/3 bg-amber-300'}`} /></div>
       </div>
       <div className="p-5">
         <div className="flex items-start gap-3"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${toneClasses[content.tone]}`}>{payment.status === 'Released' ? <HiOutlineCheckCircle className="h-5 w-5" /> : payment.status === 'Failed' ? <HiOutlineExclamationCircle className="h-5 w-5" /> : <HiOutlineLockClosed className="h-4 w-4" />}</span><div><p className="text-sm font-bold text-slate-900 dark:text-white">{content.label}</p><p className="mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{content.description}</p></div></div>
 
-        <div className="my-5 space-y-2.5 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
-          {Number(payment.jobBudget) !== Number(payment.grossAmount) && <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.jobBudget)}</span></div>}
-          <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Contract amount</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.grossAmount)}</span></div>
-          <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Platform fee ({payment.commissionPercent}%)</span><span>- {formatCurrency(payment.commissionAmount)}</span></div>
-          <div className="h-px bg-slate-200 dark:bg-slate-800" />
-          <div className="flex justify-between font-semibold text-slate-800 dark:text-white"><span>Worker receives</span><span className="text-emerald-600 dark:text-emerald-300">{formatCurrency(payment.workerAmount)}</span></div>
-        </div>
-
+        {priceMismatch ? (
+          <div className="my-5 space-y-2 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
+            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownBudget)}</span></div>
+            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Agreed contract</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shownContractAmount)}</span></div>
+            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Previous checkout amount</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.grossAmount)}</span></div>
+            <p className="border-t border-slate-200 pt-2 text-amber-700 dark:border-slate-800 dark:text-amber-300">Checkout data does not match these job details, so payment is paused.</p>
+          </div>
+        ) : (
+          <div className="my-5 space-y-2.5 rounded-xl bg-slate-50 p-3.5 text-xs dark:bg-slate-950/50">
+            {Number(payment.jobBudget) !== Number(payment.grossAmount) && <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Customer budget</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.jobBudget)}</span></div>}
+            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Contract amount</span><span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(payment.grossAmount)}</span></div>
+            <div className="flex justify-between text-slate-500 dark:text-slate-400"><span>Platform fee ({payment.commissionPercent}%)</span><span>- {formatCurrency(payment.commissionAmount)}</span></div>
+            <div className="h-px bg-slate-200 dark:bg-slate-800" />
+            <div className="flex justify-between font-semibold text-slate-800 dark:text-white"><span>Worker receives</span><span className="text-emerald-600 dark:text-emerald-300">{formatCurrency(payment.workerAmount)}</span></div>
+          </div>
+        )}
         {!payment.workerPayoutReady && payment.status === 'NotStarted' && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-[11px] leading-4 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">Worker payout account must be verified before payment can be funded.</div>}
         {error && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
-        {isCustomer && payment.canPay && <button type="button" disabled={Boolean(action) || !payment.workerPayoutReady} onClick={handlePay} className="gradient-primary flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"><HiOutlineCurrencyRupee className="h-5 w-5" />{action === 'pay' ? 'Opening checkout…' : payment.status === 'Failed' ? `Retry ${formatCurrency(payment.grossAmount)}` : `Fund ${formatCurrency(payment.grossAmount)}`}</button>}
-        {!isCustomer && payment.canSubmitWork && <button type="button" disabled={Boolean(action)} onClick={() => runAction('submit', `/payments/job/${jobId}/submit-work`)} className="gradient-primary flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50"><HiOutlineCheckCircle className="h-5 w-5" />{action === 'submit' ? 'Submitting…' : 'Submit completed work'}</button>}
-        {isCustomer && payment.canRelease && <button type="button" disabled={Boolean(action)} onClick={() => runAction('release', `/payments/job/${jobId}/release`)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-700 disabled:opacity-50"><HiOutlineCurrencyRupee className="h-5 w-5" />{action === 'release' ? 'Releasing…' : `Approve & release ${formatCurrency(payment.workerAmount)}`}</button>}
+        {isCustomer && payment.canPay && <button type="button" disabled={Boolean(action) || !payment.workerPayoutReady || priceMismatch} onClick={handlePay} className="gradient-primary flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"><HiOutlineCurrencyRupee className="h-5 w-5" />{action === 'pay' ? 'Opening checkout…' : payment.status === 'Failed' ? `Retry ${formatCurrency(shownContractAmount)}` : `Fund ${formatCurrency(shownContractAmount)}`}</button>}
+        {!isCustomer && payment.canSubmitWork && <button type="button" disabled={Boolean(action) || priceMismatch} onClick={() => runAction('submit', `/payments/job/${jobId}/submit-work`)} className="gradient-primary flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50"><HiOutlineCheckCircle className="h-5 w-5" />{action === 'submit' ? 'Submitting…' : 'Submit completed work'}</button>}
+        {isCustomer && payment.canRelease && <button type="button" disabled={Boolean(action) || priceMismatch} onClick={() => runAction('release', `/payments/job/${jobId}/release`)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-700 disabled:opacity-50"><HiOutlineCurrencyRupee className="h-5 w-5" />{action === 'release' ? 'Releasing…' : `Approve & release ${formatCurrency(payment.workerAmount)}`}</button>}
         {!isCustomer && payment.status === 'NotStarted' && <p className="flex items-center justify-center gap-2 text-center text-[11px] text-slate-400"><HiOutlineClock className="h-4 w-4" />Waiting for customer funding</p>}
         {!isCustomer && payment.status === 'WorkSubmitted' && <p className="flex items-center justify-center gap-2 text-center text-[11px] text-slate-400"><HiOutlineClock className="h-4 w-4" />Waiting for customer approval</p>}
       </div>

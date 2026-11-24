@@ -89,8 +89,12 @@ const CustomerJobDetail = () => {
   const hiredWorker = job.hiredProvider || acceptedApp?.worker || null;
   const isOpen = job.status === 'Open';
   const hasAssignedWorker = Boolean(hiredWorker) && !isOpen;
-  const directBooking = acceptedApp?.proposalMessage === 'Direct booking by customer.';
-  const contractAmount = job.paidAmount || job.contractAmount || (directBooking ? job.budget : acceptedApp?.bidAmount) || job.budget;
+  const directBooking = job.bookingType === 'direct'
+    || acceptedApp?.proposalMessage === 'Direct booking by customer.'
+    || (/^Service booking with\s/i.test(job.title || '') && /^Direct hire request for\s/i.test(job.description || ''));
+  const contractAmount = directBooking
+    ? job.budget
+    : job.paidAmount || job.contractAmount || acceptedApp?.bidAmount || job.budget;
   const displayedAmount = isOpen ? job.budget : contractAmount;
   const isCompleted = job.status === 'Completed';
 
@@ -289,7 +293,7 @@ const CustomerJobDetail = () => {
                 </button>
               </div>
             ) : hiredWorker ? (
-              <ContractPaymentPanel jobId={id} viewerRole="customer" onUpdated={() => dispatch(fetchJobById(id))} />
+              <ContractPaymentPanel jobId={id} viewerRole="customer" expectedBudget={job.budget} expectedContractAmount={contractAmount} onUpdated={() => dispatch(fetchJobById(id))} />
             ) : (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">A worker must be assigned before a contract payment can be created.</div>
             )}

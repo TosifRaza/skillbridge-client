@@ -64,6 +64,7 @@ const WorkerJobDetail = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { currentJob: job, loading, error } = useAppSelector((state) => state.job);
+  const { user } = useAppSelector((state) => state.auth);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
@@ -111,7 +112,13 @@ const WorkerJobDetail = () => {
   const location = job.location?.address || (job.serviceType === 'digital' ? 'Remote' : 'Location not specified');
   const summary = job.description?.trim().split(/\r?\n/)[0].slice(0, 110) || '';
   const applied = Boolean(applicationStatus.applied);
-  const accepted = applicationStatus.status === 'Accepted';
+  const assignedWorkerId = job.hiredProvider?._id || job.hiredProvider;
+  const accepted = applicationStatus.status === 'Accepted' || String(assignedWorkerId || '') === String(user?._id || '');
+  const directBooking = job.bookingType === 'direct'
+    || (/^Service booking with\s/i.test(job.title || '') && /^Direct hire request for\s/i.test(job.description || ''));
+  const agreedContractAmount = directBooking
+    ? job.budget
+    : job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount;
   const applicationTitle = accepted ? 'Application Accepted' : applicationStatus.status === 'Rejected' ? 'Application Update' : 'Already Applied';
   const applicationMessage = accepted
     ? 'The client selected you. Your contract and next steps are ready below.'
@@ -212,10 +219,10 @@ const WorkerJobDetail = () => {
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"><dt className="text-[14px] font-medium text-slate-500 dark:text-slate-400">Type:</dt><dd className="text-[15px] font-semibold capitalize text-slate-800 dark:text-slate-100">{job.serviceType || 'local'}</dd></div>
               </div>
             </dl>
-            {accepted && (job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount) != null && (
+            {accepted && agreedContractAmount != null && (
               <div className="mt-3 flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2.5 text-sm dark:bg-violet-950/30">
                 <span className="font-semibold text-violet-800 dark:text-violet-200">Agreed contract price</span>
-                <span className="font-extrabold text-violet-800 dark:text-violet-200">{formatBudget(job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount)}</span>
+                <span className="font-extrabold text-violet-800 dark:text-violet-200">{formatBudget(agreedContractAmount)}</span>
               </div>
             )}
           </Card>
@@ -241,7 +248,7 @@ const WorkerJobDetail = () => {
             </Card>
           )}
 
-          {accepted && <ContractPaymentPanel jobId={id} viewerRole="provider" />}
+          {accepted && <ContractPaymentPanel jobId={id} viewerRole="provider" expectedBudget={job.budget} expectedContractAmount={agreedContractAmount} />}
         </aside>
       </div>
 
