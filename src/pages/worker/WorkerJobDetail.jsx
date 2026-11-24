@@ -8,7 +8,7 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
-import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import JobSettlementFlow from '@/components/shared/JobSettlementFlow';
 import {
   HiOutlineArrowLeft,
   HiOutlineLocationMarker,
@@ -114,11 +114,7 @@ const WorkerJobDetail = () => {
   const applied = Boolean(applicationStatus.applied);
   const assignedWorkerId = job.hiredProvider?._id || job.hiredProvider;
   const accepted = applicationStatus.status === 'Accepted' || String(assignedWorkerId || '') === String(user?._id || '');
-  const directBooking = job.bookingType === 'direct'
-    || (/^Service booking with\s/i.test(job.title || '') && /^Direct hire request for\s/i.test(job.description || ''));
-  const agreedContractAmount = directBooking
-    ? job.budget
-    : job.contractAmount ?? applicationStatus.contractAmount ?? applicationStatus.bidAmount;
+  const agreedContractAmount = job.budget;
   const applicationTitle = accepted ? 'Application Accepted' : applicationStatus.status === 'Rejected' ? 'Application Update' : 'Already Applied';
   const applicationMessage = accepted
     ? 'The client selected you. Your contract and next steps are ready below.'
@@ -248,7 +244,7 @@ const WorkerJobDetail = () => {
             </Card>
           )}
 
-          {accepted && <ContractPaymentPanel jobId={id} viewerRole="provider" expectedBudget={job.budget} expectedContractAmount={agreedContractAmount} />}
+          {accepted && <JobSettlementFlow jobId={id} viewerRole="provider" onUpdated={() => dispatch(fetchJobById(id))} />}
         </aside>
       </div>
 

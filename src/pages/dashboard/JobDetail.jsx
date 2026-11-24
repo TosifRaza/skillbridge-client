@@ -119,7 +119,7 @@ const JobDetail = () => {
       )}
 
       {/* Apply Modal Trigger */}
-      {showApplyModal && <ApplyModal jobId={id} onClose={() => setShowApplyModal(false)} />}
+      {showApplyModal && <ApplyModal jobId={id} budget={job.budget} onClose={() => setShowApplyModal(false)} />}
     </div>
   );
 };

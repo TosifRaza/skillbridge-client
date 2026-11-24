@@ -8,15 +8,11 @@ import {
   rejectApplication,
   clearApplications,
 } from '@/store/slices/applicationSlice';
-import ContractPaymentPanel from '@/components/shared/ContractPaymentPanel';
+import JobSettlementFlow from '@/components/shared/JobSettlementFlow';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
-import {
-  HiOutlineChatAlt,
-  HiOutlineCheckCircle,
-  HiOutlinePrinter,
-} from 'react-icons/hi';
+import { HiOutlineChatAlt } from 'react-icons/hi';
 
 const formatINR = (val) =>
   new Intl.NumberFormat('en-IN', {
@@ -54,11 +50,8 @@ const CustomerJobDetail = () => {
     if (action === acceptApplication) {
       const proposal = applications.find((application) => application._id === applicationId);
       if (!proposal) return;
-      const quotedAmount = formatINR(proposal.bidAmount);
       const budgetAmount = formatINR(job.budget);
-      const priceNote = Number(proposal.bidAmount) === Number(job.budget)
-        ? `The contract amount will be ${quotedAmount}.`
-        : `The worker quoted ${quotedAmount}; the posted budget is ${budgetAmount}. Accepting makes ${quotedAmount} the contract amount.`;
+      const priceNote = `The contract amount is fixed at the posted price of ${budgetAmount}.`;
       if (!window.confirm(`Accept ${proposal.worker?.fullName || 'this proposal'}?\n\n${priceNote}`)) return;
     }
 
@@ -89,12 +82,7 @@ const CustomerJobDetail = () => {
   const hiredWorker = job.hiredProvider || acceptedApp?.worker || null;
   const isOpen = job.status === 'Open';
   const hasAssignedWorker = Boolean(hiredWorker) && !isOpen;
-  const directBooking = job.bookingType === 'direct'
-    || acceptedApp?.proposalMessage === 'Direct booking by customer.'
-    || (/^Service booking with\s/i.test(job.title || '') && /^Direct hire request for\s/i.test(job.description || ''));
-  const contractAmount = directBooking
-    ? job.budget
-    : job.paidAmount || job.contractAmount || acceptedApp?.bidAmount || job.budget;
+  const contractAmount = Number(job.budget) || 0;
   const displayedAmount = isOpen ? job.budget : contractAmount;
   const isCompleted = job.status === 'Completed';
 
@@ -196,7 +184,7 @@ const CustomerJobDetail = () => {
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">{isOpen ? 'Worker proposals' : hasAssignedWorker ? 'Assigned professional' : 'Applications'}</h2>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    {isOpen ? "Compare each professional's quote and proposal before choosing." : 'Worker selected for this job.'}
+                    {isOpen ? 'Review each professional’s experience and availability. The posted price is fixed.' : 'Worker selected for this job.'}
                   </p>
                 </div>
                 {isOpen && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{applications.length} {applications.length === 1 ? 'proposal' : 'proposals'}</span>}
@@ -224,8 +212,8 @@ const CustomerJobDetail = () => {
                               </div>
                             </div>
                             <div className="shrink-0 rounded-xl bg-violet-50 px-3 py-2 text-right dark:bg-violet-950/30">
-                              <span className="block text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">Proposed bid</span>
-                              <span className="text-lg font-extrabold text-violet-800 dark:text-violet-200">{formatINR(app.bidAmount)}</span>
+                              <span className="block text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">Fixed job price</span>
+                              <span className="text-lg font-extrabold text-violet-800 dark:text-violet-200">{formatINR(job.budget)}</span>
                             </div>
                           </div>
 
@@ -271,7 +259,7 @@ const CustomerJobDetail = () => {
             </section>
           </div>
 
-          {/* One protected payment flow for the whole contract lifecycle */}
+          {/* One posted price and payment flow for the whole job lifecycle */}
           <div className="min-w-0 space-y-2 lg:col-span-5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               Contract &amp; Payment
@@ -279,21 +267,10 @@ const CustomerJobDetail = () => {
             {isOpen ? (
               <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-5 dark:border-violet-900/60 dark:bg-violet-950/20">
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{applications.length ? 'Proposal received' : 'Waiting for proposals'}</p>
-                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {applications.length ? "Review the worker's quoted price and proposal. Accepting confirms that price as the contract amount." : 'Your job is open to professionals. New proposals will appear here.'}
-                </p>
-              </div>
-            ) : isCompleted && Number(job.paidAmount) > 0 ? (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 text-center dark:border-emerald-900/60 dark:bg-emerald-950/20">
-                <HiOutlineCheckCircle className="mx-auto h-8 w-8 text-emerald-600" />
-                <p className="mt-2 text-sm font-bold text-slate-900 dark:text-white">Work completed and payment settled</p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Paid {formatINR(job.paidAmount)} via the previous payment flow.</p>
-                <button type="button" onClick={() => window.print()} className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-surface-800 dark:text-slate-200">
-                  <HiOutlinePrinter className="h-4 w-4" /> Print receipt
-                </button>
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{applications.length ? `Review worker experience and availability. The fixed job price is ${formatINR(job.budget)}.` : 'Your job is open to professionals. New applications will appear here.'}</p>
               </div>
             ) : hiredWorker ? (
-              <ContractPaymentPanel jobId={id} viewerRole="customer" expectedBudget={job.budget} expectedContractAmount={contractAmount} onUpdated={() => dispatch(fetchJobById(id))} />
+              <JobSettlementFlow jobId={id} viewerRole="customer" onUpdated={() => dispatch(fetchJobById(id))} />
             ) : (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">A worker must be assigned before a contract payment can be created.</div>
             )}

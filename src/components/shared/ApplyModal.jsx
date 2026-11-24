@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 
 const ApplyModal = ({ jobId, budget, onClose, onApplied, onAlreadyApplied }) => {
   const dispatch = useAppDispatch();
-  const [formData, setFormData] = useState({ proposalMessage: '', bidAmount: '', estimatedCompletionTime: '' });
+  const [formData, setFormData] = useState({ proposalMessage: '', estimatedCompletionTime: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -45,11 +45,14 @@ const ApplyModal = ({ jobId, budget, onClose, onApplied, onAlreadyApplied }) => 
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Your proposed price (₹)" name="bidAmount" type="number" min="1" step="0.01" value={formData.bidAmount} onChange={handleChange} placeholder="e.g. 499" required />
+            <div className="rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
+              <span className="block text-xs font-medium text-surface-500">Fixed job price</span>
+              <span className="mt-1 block text-lg font-bold text-violet-700 dark:text-violet-300">₹{Number(budget || 0).toLocaleString('en-IN')}</span>
+            </div>
             <Input label="Est. Completion" name="estimatedCompletionTime" value={formData.estimatedCompletionTime} onChange={handleChange} placeholder="e.g. 2 days" required />
           </div>
 
-          {budget !== undefined && <p className="-mt-2 text-xs text-surface-500">Customer budget: <strong>₹{Number(budget).toLocaleString('en-IN')}</strong>. The customer will review your quoted price before accepting.</p>}
+          <p className="-mt-2 text-xs text-surface-500">The customer’s posted price is fixed for this job. Applying does not change the amount.</p>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>

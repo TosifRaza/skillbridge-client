@@ -117,7 +117,7 @@ const CustomerHome = () => {
       const jobTitle = p.job?.title || 'your job';
       list.push({
         id: `prop-${p._id}`,
-        text: `New proposal from ${workerName} on "${jobTitle}" (₹${p.bidAmount || 0})`,
+        text: `New application from ${workerName} on "${jobTitle}" (fixed price ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(p.job?.budget) || 0)})`,
         time: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'Recently',
         color: 'bg-indigo-500',
       });

@@ -102,8 +102,7 @@ const MyContracts = () => {
           filteredApps.map((app) => {
             const job = app.job || {};
             const isCompleted = job.status === 'Completed';
-            const contractPrice = job.contractAmount
-              ?? (app.proposalMessage === 'Direct booking by customer.' ? job.budget : app.bidAmount);
+            const contractPrice = Number(job.budget) || 0;
 
             return (
               <Card
@@ -149,9 +148,8 @@ const MyContracts = () => {
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-surface-600 dark:text-surface-300">
                       <span className="flex items-center gap-1 font-bold text-primary-600 dark:text-primary-400">
-                        <HiOutlineCurrencyDollar className="w-4 h-4" /> {app.status === 'Accepted' ? 'Agreed price' : 'Your quote'}: {formatINR(app.status === 'Accepted' ? contractPrice : app.bidAmount)}
+                        <HiOutlineCurrencyDollar className="w-4 h-4" /> Fixed job price: {formatINR(contractPrice)}
                       </span>
-                      {job.budget != null && Number(job.budget) !== Number(contractPrice) && <span className="text-xs text-surface-400">Customer budget: {formatINR(job.budget)}</span>}
                       <span className="flex items-center gap-1">
                         <HiOutlineClock className="w-4 h-4" /> {app.estimatedCompletionTime}
                       </span>

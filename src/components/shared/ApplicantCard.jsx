@@ -8,6 +8,8 @@ import { acceptApplication, rejectApplication } from '@/store/slices/application
 const ApplicantCard = ({ application }) => {
   const dispatch = useAppDispatch();
   const worker = typeof application.worker === 'object' ? application.worker : { email: 'Worker' };
+  const fixedPrice = Number(application.job?.budget ?? application.bidAmount) || 0;
+  const formattedPrice = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(fixedPrice);
 
   const statusVariant = {
     Pending: 'warning',
@@ -27,7 +29,7 @@ const ApplicantCard = ({ application }) => {
 
       <div className="flex flex-col md:items-end gap-2">
         <div className="flex items-center gap-4">
-          <span className="text-lg font-bold text-primary-600">${application.bidAmount}</span>
+          <span className="text-lg font-bold text-primary-600">{formattedPrice}</span>
           <span className="text-sm text-surface-400">{application.estimatedCompletionTime}</span>
         </div>
         
