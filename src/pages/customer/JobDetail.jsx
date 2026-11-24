@@ -13,7 +13,6 @@ import axiosInstance from '@/api/axiosInstance';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
-import EmptyState from '@/components/ui/EmptyState';
 import {
   HiOutlineChatAlt,
   HiOutlineCheckCircle,
@@ -132,7 +131,10 @@ const CustomerJobDetail = () => {
   const acceptedApp = applications.find((a) => a.status === 'Accepted');
   const qrWorker = qrDetails?.worker?.id ? qrDetails.worker : null;
   const hiredWorker = job.hiredProvider || acceptedApp?.worker || qrWorker;
+  const isOpen = job.status === 'Open';
+  const hasAssignedWorker = Boolean(hiredWorker) && !isOpen;
   const contractAmount = acceptedApp?.bidAmount || job.paidAmount || qrDetails?.amount || job.budget;
+  const displayedAmount = isOpen ? job.budget : contractAmount;
   const isCompleted = job.status === 'Completed';
   const workSubmitted = Boolean(job.workSubmittedAt);
   const customerApproved = Boolean(job.customerApproved);
@@ -175,11 +177,11 @@ const CustomerJobDetail = () => {
               </span>
             </div>
 
-            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               {job.title}
             </h1>
 
-            <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5">
               {job.location?.address && <span>📍 {job.location.address}</span>}
               {job.deadline && <span>🗓️ Deadline: {new Date(job.deadline).toLocaleDateString()}</span>}
             </div>
@@ -187,10 +189,10 @@ const CustomerJobDetail = () => {
 
           <div className="text-right shrink-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Contract Amount
+              {isOpen ? 'Job Budget' : 'Contract Amount'}
             </span>
             <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              {formatINR(contractAmount)}
+              {formatINR(displayedAmount)}
             </span>
           </div>
         </div>
@@ -207,15 +209,15 @@ const CustomerJobDetail = () => {
           </div>
         )}
 
-        {/* 2-Column Body to Fit Entire Page Without Scrolling */}
-        <div className="grid md:grid-cols-12 gap-5 p-5">
+        {/* Job details, proposals, and payment status */}
+        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-12 lg:gap-6 lg:p-7">
           {/* Left Column: Job Description & Assigned Worker */}
-          <div className="md:col-span-7 flex flex-col justify-between space-y-3">
+          <div className="min-w-0 space-y-5 lg:col-span-7">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
                 Description
               </span>
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap max-h-24 overflow-y-auto pr-1">
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-6 whitespace-pre-wrap max-h-40 overflow-y-auto pr-1">
                 {job.description}
               </p>
 
@@ -236,96 +238,88 @@ const CustomerJobDetail = () => {
               )}
             </div>
 
-            <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                {hiredWorker ? 'Assigned Professional' : `Proposals (${applications.length})`}
-              </span>
-
-              {hiredWorker ? (
-                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-surface-800/60">
-                  <div className="flex items-center gap-2">
-                    <Avatar
-                      src={hiredWorker.avatar?.url}
-                      name={hiredWorker.fullName || hiredWorker.email}
-                      size="sm"
-                    />
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">
-                        {hiredWorker.fullName || 'Service Professional'}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        {hiredWorker.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Link to="/customer/chat">
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="flex items-center gap-1 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"
-                    >
-                      <HiOutlineChatAlt className="w-3.5 h-3.5" /> Message
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
+            <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  {appLoading ? (
-                    <div className="py-3 flex justify-center"><Spinner /></div>
-                  ) : applications.length > 0 ? (
-                    <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                      {applications.map((app) => (
-                        <div
-                          key={app._id}
-                          className="flex items-center justify-between rounded-xl border border-slate-200 p-2 text-xs dark:border-slate-700"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Avatar name={app.worker?.fullName || app.worker?.email} size="xs" />
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white">
-                                {app.worker?.fullName || app.worker?.email}
-                              </p>
-                              <p className="text-[10px] text-slate-400 line-clamp-1">{app.proposalMessage}</p>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">{isOpen ? 'Worker proposals' : hasAssignedWorker ? 'Assigned professional' : 'Applications'}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {isOpen ? "Compare each professional's quote and proposal before choosing." : 'Worker selected for this job.'}
+                  </p>
+                </div>
+                {isOpen && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{applications.length} {applications.length === 1 ? 'proposal' : 'proposals'}</span>}
+              </div>
+
+              {isOpen ? (
+                appLoading ? (
+                  <div className="flex justify-center rounded-2xl border border-slate-200 py-8 dark:border-slate-700"><Spinner /></div>
+                ) : applications.length > 0 ? (
+                  <div className="space-y-3">
+                    {applications.map((app) => {
+                      const applicantName = app.worker?.fullName || app.worker?.email?.split('@')[0] || 'Professional';
+                      const isPending = app.status === 'Pending';
+                      return (
+                        <article key={app._id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-violet-200 hover:shadow-md dark:border-slate-700 dark:bg-surface-800 dark:hover:border-violet-800 sm:p-5">
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <Avatar src={app.worker?.avatar?.url} name={applicantName} size="md" />
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">{applicantName}</h3>
+                                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : app.status === 'Rejected' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'}`}>{app.status}</span>
+                                </div>
+                                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{app.worker?.email || 'SkillBridge professional'}</p>
+                              </div>
+                            </div>
+                            <div className="shrink-0 rounded-xl bg-violet-50 px-3 py-2 text-right dark:bg-violet-950/30">
+                              <span className="block text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">Proposed bid</span>
+                              <span className="text-lg font-extrabold text-violet-800 dark:text-violet-200">{formatINR(app.bidAmount)}</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-indigo-600">₹{app.bidAmount}</span>
-                            {app.status === 'Pending' && (
-                              <div className="flex gap-1">
-                                <Button
-                                  size="xs"
-                                  isLoading={actionLoadingId === app._id}
-                                  disabled={Boolean(actionLoadingId) || job.status !== 'Open'}
-                                  onClick={() => handleApplicationAction(acceptApplication, app._id)}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="xs"
-                                  variant="outline"
-                                  disabled={Boolean(actionLoadingId)}
-                                  onClick={() => handleApplicationAction(rejectApplication, app._id)}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
+                          <div className="mt-4 rounded-xl bg-slate-50 px-3.5 py-3 dark:bg-slate-900/70">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Proposal</p>
+                            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-700 dark:text-slate-200">{app.proposalMessage || 'No message was included.'}</p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState icon="📭" title="No proposals yet" description="Professionals haven't applied yet." />
-                  )}
+
+                          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                              {app.estimatedCompletionTime && <span><span className="font-semibold text-slate-700 dark:text-slate-300">Estimated time:</span> {app.estimatedCompletionTime}</span>}
+                              {app.createdAt && <span>Applied {new Date(app.createdAt).toLocaleDateString()}</span>}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {app.worker?._id && <Link to={`/customer/worker/${app.worker._id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">View profile</Link>}
+                              {isPending && <>
+                                <button type="button" disabled={Boolean(actionLoadingId)} onClick={() => handleApplicationAction(rejectApplication, app._id)} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-200 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40">{actionLoadingId === app._id ? 'Please wait...' : 'Reject'}</button>
+                                <button type="button" disabled={Boolean(actionLoadingId)} onClick={() => handleApplicationAction(acceptApplication, app._id)} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-50">{actionLoadingId === app._id ? 'Please wait...' : 'Accept proposal'}</button>
+                              </>}
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center dark:border-slate-700 dark:bg-surface-800/60">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No proposals yet</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Applications from professionals will appear here.</p>
+                  </div>
+                )
+              ) : hasAssignedWorker ? (
+                <div className="flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar src={hiredWorker.avatar?.url} name={hiredWorker.fullName || hiredWorker.email} size="md" />
+                    <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900 dark:text-white">{hiredWorker.fullName || hiredWorker.email || 'Assigned professional'}</p><p className="truncate text-xs text-slate-500 dark:text-slate-400">{hiredWorker.email || 'Selected for this job'}</p></div>
+                  </div>
+                  <Link to="/customer/chat" className="shrink-0"><Button variant="outline" size="sm" className="flex min-h-10 items-center gap-2 border-emerald-200 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-200"><HiOutlineChatAlt className="h-4 w-4" /> Message worker</Button></Link>
                 </div>
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center dark:border-slate-700 dark:bg-surface-800/60"><p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No professional assigned</p></div>
               )}
-            </div>
+            </section>
           </div>
 
           {/* Right Column: Work Status & Payment Hero Action */}
-          <div className="md:col-span-5 flex flex-col justify-center">
+          <div className="min-w-0 space-y-2 lg:col-span-5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               Work & Payment Status
             </span>
@@ -429,11 +423,22 @@ const CustomerJobDetail = () => {
               </div>
             )}
 
-            {/* STATE 4: IN PROGRESS */}
-            {!isCompleted && !workSubmitted && (
-              <div className="h-full flex items-center rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-surface-800/40">
-                <p>
-                  ⏳ {hiredWorker?.fullName || 'Worker'} is currently working on this task. When completed, verification & QR payment options will appear here.
+            {!isCompleted && !workSubmitted && !customerApproved && isOpen && (
+              <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-5 dark:border-violet-900/60 dark:bg-violet-950/20">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{applications.length ? 'Proposal received' : 'Waiting for proposals'}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  {applications.length ? "Review the professional's bid and proposal, then accept one to start the contract." : 'Your job is open to professionals. New proposals will appear in the panel on the left.'}
+                </p>
+              </div>
+            )}
+
+            {!isCompleted && !workSubmitted && !customerApproved && !isOpen && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-surface-800/60">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{job.status === 'Assigned' ? 'Worker assigned' : 'Work in progress'}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  {job.status === 'Assigned'
+                    ? `${hiredWorker?.fullName || 'Your worker'} has been selected. Work updates will appear here.`
+                    : `${hiredWorker?.fullName || 'Your worker'} is working on this job. When they submit it, you can review the work and confirm payment here.`}
                 </p>
               </div>
             )}
