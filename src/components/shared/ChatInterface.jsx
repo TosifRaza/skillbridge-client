@@ -234,6 +234,7 @@ import Avatar from '@/components/ui/Avatar';
 import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineMicrophone, HiOutlinePhoneMissedCall, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 
 const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
+const AUTO_ANSWER_CALL_KEY = 'skillbridge:auto-answer-call';
 const clearQueuedIncomingCall = (callId) => {
   try {
     const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
@@ -376,27 +377,38 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     }
   };
 
-  const answerCall = async () => {
-    if (!incomingCall || !socket) return;
+  const answerCall = async (callToAnswer = incomingCall) => {
+    if (!callToAnswer || !socket) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: incomingCall.callType === 'video' });
+      const preparedMedia = window.__skillBridgeIncomingCallStream;
+      const stream = preparedMedia?.callId === callToAnswer.callId
+        ? preparedMedia.stream
+        : await navigator.mediaDevices.getUserMedia({ audio: true, video: callToAnswer.callType === 'video' });
+      if (preparedMedia?.callId === callToAnswer.callId) window.__skillBridgeIncomingCallStream = null;
       localStreamRef.current = stream;
       setLocalStream(stream);
-      setCallType(incomingCall.callType);
-      callIdRef.current = incomingCall.callId;
+      setCallType(callToAnswer.callType);
+      callIdRef.current = callToAnswer.callId;
       const peerConnection = createPeerConnection();
       stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
-      await peerConnection.setRemoteDescription(incomingCall.offer);
+      pendingCandidatesRef.current = [...(callToAnswer.pendingCandidates || []), ...pendingCandidatesRef.current];
+      await peerConnection.setRemoteDescription(callToAnswer.offer);
       await addPendingCandidates();
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
-      socket.emit('call-answer', { conversationId, callId: incomingCall.callId, answer: peerConnection.localDescription });
-      clearQueuedIncomingCall(incomingCall.callId);
+      socket.emit('call-answer', { conversationId, callId: callToAnswer.callId, answer: peerConnection.localDescription });
+      clearQueuedIncomingCall(callToAnswer.callId);
       setIncomingCall(null);
       setCallStatus('connecting');
     } catch (error) {
-      clearCall();
-      setCallError(error.name === 'NotAllowedError' ? 'Allow camera and microphone access to answer.' : 'Could not join the call. Check your camera and microphone.');
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+      peerConnectionRef.current?.close();
+      peerConnectionRef.current = null;
+      callIdRef.current = callToAnswer.callId;
+      setLocalStream(null);
+      setCallStatus('incoming');
+      setCallError(error.name === 'NotAllowedError' ? 'Allow camera and microphone access, then tap Answer again.' : 'Could not join the call. Check your camera and microphone, then try again.');
     }
   };
 
@@ -416,15 +428,20 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
       if (queuedCall?.conversationId !== conversationId) return;
       callIdRef.current = queuedCall.callId;
-      pendingCandidatesRef.current = [];
+      pendingCandidatesRef.current = queuedCall.pendingCandidates || [];
       setIncomingCall(queuedCall);
       setCallType(queuedCall.callType);
       setCallStatus('incoming');
       setCallError('');
+      const autoAnswerCallId = window.sessionStorage.getItem(AUTO_ANSWER_CALL_KEY);
+      if (autoAnswerCallId === queuedCall.callId) {
+        window.sessionStorage.removeItem(AUTO_ANSWER_CALL_KEY);
+        void answerCall(queuedCall);
+      }
     } catch {
       window.sessionStorage.removeItem(PENDING_CALL_KEY);
     }
-  }, [conversationId]);
+  }, [conversationId, answerCall]);
 
   useEffect(() => {
     if (!socket) return undefined;

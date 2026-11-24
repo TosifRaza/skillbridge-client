@@ -8,6 +8,7 @@ import Avatar from '@/components/ui/Avatar';
 import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiOutlinePhone, HiOutlinePhoneMissedCall, HiOutlineX, HiLightningBolt } from 'react-icons/hi';
 
 const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
+const AUTO_ANSWER_CALL_KEY = 'skillbridge:auto-answer-call';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/worker/home' },
@@ -24,6 +25,7 @@ const WorkerLayout = () => {
   const socket = useSocket();
   const { user } = useAppSelector((state) => state.auth);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [isAcceptingCall, setIsAcceptingCall] = useState(false);
   const handleLogout = async () => { await dispatch(logoutUser()); navigate('/auth/login'); };
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'there';
 
@@ -35,6 +37,15 @@ const WorkerLayout = () => {
       window.sessionStorage.setItem(PENDING_CALL_KEY, JSON.stringify(call));
       setIncomingCall(call);
     };
+    const onIceCandidate = ({ conversationId, callId, candidate } = {}) => {
+      if (!candidate) return;
+      try {
+        const pendingCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+        if (pendingCall?.conversationId !== conversationId || pendingCall?.callId !== callId) return;
+        pendingCall.pendingCandidates = [...(pendingCall.pendingCandidates || []), candidate];
+        window.sessionStorage.setItem(PENDING_CALL_KEY, JSON.stringify(pendingCall));
+      } catch { /* Ignore stale or malformed queued call data. */ }
+    };
     const clearCall = ({ callId } = {}) => {
       setIncomingCall((current) => {
         if (!current || (callId && current.callId !== callId)) return current;
@@ -45,11 +56,13 @@ const WorkerLayout = () => {
     const onLocalCallCleared = (event) => clearCall({ callId: event.detail?.callId });
 
     socket.on('call-incoming', onIncomingCall);
+    socket.on('call-ice-candidate', onIceCandidate);
     socket.on('call-ended', clearCall);
     socket.on('call-declined', clearCall);
     window.addEventListener('skillbridge:incoming-call-cleared', onLocalCallCleared);
     return () => {
       socket.off('call-incoming', onIncomingCall);
+      socket.off('call-ice-candidate', onIceCandidate);
       socket.off('call-ended', clearCall);
       socket.off('call-declined', clearCall);
       window.removeEventListener('skillbridge:incoming-call-cleared', onLocalCallCleared);
@@ -59,8 +72,39 @@ const WorkerLayout = () => {
   const callIsOpenInMessages = incomingCall
     && location.pathname === '/worker/chat'
     && new URLSearchParams(location.search).get('conversationId') === incomingCall.conversationId;
-  const openIncomingCall = () => {
+  const answerIncomingCall = async () => {
     if (!incomingCall) return;
+    const call = incomingCall;
+    let callIsStillRinging = true;
+    setIsAcceptingCall(true);
+    try {
+      // Request media directly from the user's click so browser gesture rules
+      // allow the microphone/camera before routing into the chat screen.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: call.callType === 'video',
+      });
+      const stillPending = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+      if (stillPending?.callId !== call.callId) {
+        stream.getTracks().forEach((track) => track.stop());
+        callIsStillRinging = false;
+      } else {
+        window.__skillBridgeIncomingCallStream = { callId: call.callId, stream };
+        window.sessionStorage.setItem(AUTO_ANSWER_CALL_KEY, call.callId);
+      }
+    } catch {
+      // Still open the conversation; the in-chat Answer control can retry after
+      // the user changes browser permissions or selects another device.
+    } finally {
+      setIsAcceptingCall(false);
+      try {
+        const stillPending = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
+        callIsStillRinging = callIsStillRinging && stillPending?.callId === call.callId;
+      } catch {
+        callIsStillRinging = false;
+      }
+      if (callIsStillRinging) navigate(`/worker/chat?conversationId=${encodeURIComponent(call.conversationId)}`);
+    }
     navigate(`/worker/chat?conversationId=${encodeURIComponent(incomingCall.conversationId)}`);
   };
   const declineIncomingCall = () => {
@@ -133,12 +177,12 @@ const WorkerLayout = () => {
       {incomingCall && !callIsOpenInMessages && <div role="dialog" aria-modal="true" aria-label="Incoming call" className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:items-center sm:p-6">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#171a36] text-white shadow-2xl">
           <div className="flex items-start justify-between border-b border-white/10 px-5 py-4 sm:px-6">
-            <div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-violet-200">Incoming {incomingCall.callType || 'audio'} call</p><h2 className="mt-1 text-xl font-bold">{incomingCall.caller?.name || 'SkillBridge contact'}</h2><p className="mt-1 text-sm text-slate-300">Open Messages to answer the call.</p></div>
+            <div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-violet-200">Incoming {incomingCall.callType || 'audio'} call</p><h2 className="mt-1 text-xl font-bold">{incomingCall.caller?.name || 'SkillBridge contact'}</h2><p className="mt-1 text-sm text-slate-300">Answer here to join immediately.</p></div>
             <button type="button" onClick={declineIncomingCall} aria-label="Decline call" className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"><HiOutlineX className="h-5 w-5"/></button>
           </div>
           <div className="flex items-center justify-end gap-3 px-5 py-4 sm:px-6">
             <button type="button" onClick={declineIncomingCall} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-500"><HiOutlinePhoneMissedCall className="h-4 w-4"/>Decline</button>
-            <button type="button" onClick={openIncomingCall} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-500 px-5 text-sm font-bold text-white transition hover:bg-emerald-400"><HiOutlinePhone className="h-4 w-4"/>Open call</button>
+            <button type="button" onClick={answerIncomingCall} disabled={isAcceptingCall} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-500 px-5 text-sm font-bold text-white transition hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-70"><HiOutlinePhone className="h-4 w-4"/>{isAcceptingCall ? 'Connecting…' : 'Answer'}</button>
           </div>
         </div>
       </div>}
