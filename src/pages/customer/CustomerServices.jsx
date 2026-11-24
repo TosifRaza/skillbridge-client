@@ -90,7 +90,7 @@ const CustomerServices = () => {
         <section>
           <div className="mb-3 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Categories</h2><button type="button" onClick={() => setActiveCategory('All')} className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></button></div>
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {servicesWithRatings.map((service) => <button key={service.id} type="button" onClick={() => setActiveCategory(service.name)} className={`flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-[18px] border bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(25,30,70,.05)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}><span className="flex h-9 w-10 items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-950/40"><ServiceIcon serviceId={service.id} className="h-7 w-7" /></span><span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span></button>)}
+            {servicesWithRatings.map((service) => <button key={service.id} type="button" onClick={() => setActiveCategory(service.name)} className={`flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-[18px] border bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(25,30,70,.05)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}><span className="flex h-9 w-10 items-center justify-center"><ServiceIcon serviceId={service.id} className="h-8 w-8" /></span><span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span></button>)}
           </div>
         </section>
 
@@ -98,7 +98,7 @@ const CustomerServices = () => {
           <h2 className="mb-3 px-1 text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Popular Services</h2>
           {filteredServices.length ? <div className="space-y-3">
             {filteredServices.map((service) => <article key={service.id} className="flex min-h-[142px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-[0_4px_14px_rgba(25,30,70,.04)] dark:border-slate-700 dark:bg-surface-800">
-              <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center rounded-[20px] bg-violet-50 dark:bg-violet-950/40"><ServiceIcon serviceId={service.id} className="h-14 w-14" /></div>
+              <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center"><ServiceIcon serviceId={service.id} className="h-[70px] w-[70px]" /></div>
               <div className="min-w-0 flex-1 self-stretch py-1"><h3 className="text-[15px] font-extrabold leading-tight text-slate-950 dark:text-white">{service.label || service.name}</h3><p className="mt-1 line-clamp-2 text-[12px] leading-snug text-slate-600 dark:text-slate-300">{service.description || service.shortDesc}</p><p className="mt-2 text-[15px] font-extrabold text-violet-700 dark:text-violet-300">From {formatPrice(service.price)}</p></div>
               <div className="flex h-full min-w-[92px] flex-col items-center justify-center gap-2 border-l border-slate-200 pl-2 dark:border-slate-700"><span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-violet-50 px-2 py-1 text-[11px] font-bold text-slate-900 dark:bg-violet-950/50 dark:text-slate-100"><HiOutlineStar className="h-4 w-4 fill-amber-400 text-amber-400"/>{service.rating.average > 0 ? service.rating.average.toFixed(1) : 'New'}{service.rating.reviewCount > 0 && <span className="font-medium text-slate-500">({service.rating.reviewCount.toLocaleString('en-IN')})</span>}</span><Link to={`/customer/jobs/post?category=${encodeURIComponent(service.name)}`} className="flex min-h-10 w-full items-center justify-center gap-1 rounded-[14px] bg-gradient-to-r from-[#5324c0] to-[#7138df] px-2 text-[13px] font-bold text-white shadow-sm">Book <HiOutlineArrowRight className="h-4 w-4"/></Link></div>
             </article>)}
@@ -142,7 +142,7 @@ const CustomerServices = () => {
                 <Card key={service.id} hover className="dark:bg-surface-800 overflow-hidden">
                   <div className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50 dark:bg-violet-950/40"><ServiceIcon serviceId={service.id} className="h-9 w-9" /></span>
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center"><ServiceIcon serviceId={service.id} className="h-10 w-10" /></span>
                       <h3 className="text-xl font-bold text-surface-900 dark:text-white">{service.name}</h3>
                     </div>
                     <p className="text-surface-500 dark:text-surface-400 text-sm mb-6">{service.shortDesc}</p>
