@@ -402,6 +402,8 @@ const PostJob = () => {
   const { loading, error } = useAppSelector((state) => state.job);
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [stepError, setStepError] = useState('');
+  const [imageError, setImageError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -415,26 +417,39 @@ const PostJob = () => {
   });
   const [images, setImages] = useState([]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData((current) => ({ ...current, [e.target.name]: e.target.value }));
+    setStepError('');
+  };
+
+  const setSelectedImages = (fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length > 5) return setImageError('Choose up to 5 images.');
+    if (files.some((file) => !file.type.startsWith('image/'))) return setImageError('Only image files are supported.');
+    if (files.some((file) => file.size > 5 * 1024 * 1024)) return setImageError('Each image must be 5 MB or smaller.');
+    setImages(files);
+    setImageError('');
+  };
 
   const handleNext = () => {
     // Basic validation per step
     if (currentStep === 1 && (!formData.title || !formData.description)) {
-      alert('Please fill in the title and description.');
+      setStepError('Add a title and description to continue.');
       return;
     }
-    if (currentStep === 3 && (!formData.budget || !formData.deadline)) {
-      alert('Please set a budget and deadline.');
+    if (currentStep === 3 && (!formData.budget || Number(formData.budget) <= 0 || !formData.deadline)) {
+      setStepError('Enter a budget greater than zero and choose a deadline.');
       return;
     }
     if (currentStep === 4 && !formData.address) {
-      alert('Please provide an address or location.');
+      setStepError('Add a location to continue.');
       return;
     }
+    setStepError('');
     setCurrentStep((prev) => Math.min(prev + 1, 5));
   };
 
-  const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+  const handleBack = () => { setStepError(''); setCurrentStep((prev) => Math.max(prev - 1, 1)); };
 
   // const handleSubmit = async () => {
   //   const data = new FormData();
@@ -456,15 +471,11 @@ const PostJob = () => {
     const data = new FormData();
     Object.keys(formData).forEach((key) => data.append(key, formData[key]));
 
-    // ================= FIX IS HERE =================
-    // Change 'files' to match EXACTLY what your backend uploadMiddleware expects
-    // Common names: 'images', 'jobImages', 'files'
     if (images.length > 0) {
       for (let i = 0; i < images.length; i++) {
-        data.append('images', images[i]); // <-- Changed from 'files' to 'images'
+        data.append('images', images[i]);
       }
     }
-    // ==============================================
 
     const result = await dispatch(createJob(data));
     if (createJob.fulfilled.match(result)) {
@@ -474,17 +485,17 @@ const PostJob = () => {
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
-      <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-2">
+      <h1 className="mb-2 text-2xl font-bold text-surface-900 dark:text-white sm:text-3xl">
         {matchedCategory ? `Book ${matchedCategory}` : 'Post a New Job'}
       </h1>
-      <p className="text-surface-500 dark:text-surface-400 mb-8">
+      <p className="mb-6 text-sm text-surface-500 dark:text-surface-400 sm:mb-8 sm:text-base">
         {matchedCategory
           ? `Enter your project requirements to book top-rated ${matchedCategory} professionals.`
           : 'Follow the steps to get the best bids from professionals.'}
       </p>
 
       {/* Progress Bar */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="mb-7 flex items-start justify-between gap-1 sm:mb-10 sm:gap-3">
         {steps.map((step, idx) => (
           <div key={step.id} className="flex-1 flex flex-col items-center relative">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-300 ${
@@ -494,7 +505,7 @@ const PostJob = () => {
             }`}>
               <step.icon className="w-5 h-5" />
             </div>
-            <p className={`text-xs mt-2 font-medium ${currentStep >= step.id ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}>{step.title}</p>
+            <p className={`mt-2 text-center text-[9px] font-medium leading-tight sm:text-xs ${currentStep >= step.id ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}>{step.title}</p>
             {idx < steps.length - 1 && (
               <div className={`absolute top-5 left-1/2 w-full h-0.5 transition-colors duration-300 ${
                 currentStep > step.id ? 'bg-primary-500' : 'bg-surface-200 dark:bg-surface-700'
@@ -504,14 +515,16 @@ const PostJob = () => {
         ))}
       </div>
 
-      <Card className="dark:bg-surface-800 p-8 min-h-[400px] flex flex-col">
+      <Card className="flex min-h-[400px] flex-col p-4 dark:bg-surface-800 sm:p-8">
         {error && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm">⚠️ {error}</div>}
+
+        {stepError && <div role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{stepError}</div>}
 
         {/* Step 1: The Basics */}
         {currentStep === 1 && (
           <div className="space-y-5 flex-grow">
             <Input label="Job Title" name="title" value={formData.title} onChange={handleChange} placeholder="e.g., Need help moving a sofa" required />
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Select label="Category" name="category" value={formData.category} onChange={handleChange} options={PHASE_1_SERVICES.map(s => ({ value: s.name, label: `${s.emoji} ${s.name}` }))} />
               <div>
                 <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Service Type</label>
@@ -530,20 +543,21 @@ const PostJob = () => {
           <div className="space-y-5 flex-grow">
             <h3 className="text-lg font-bold text-surface-900 dark:text-white">Upload Images (Optional)</h3>
             <p className="text-sm text-surface-500 dark:text-surface-400">Adding photos helps workers understand the job better and provide accurate bids.</p>
-            <div className="mt-4 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-xl">
+            <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); setSelectedImages(event.dataTransfer.files); }} className="mt-4 flex justify-center rounded-xl border-2 border-dashed border-surface-300 px-4 py-6 dark:border-surface-600 sm:px-6">
               <div className="space-y-1 text-center">
                 <HiOutlineUpload className="mx-auto h-12 w-12 text-surface-400" />
                 <div className="flex text-sm text-surface-600 dark:text-surface-300">
                   <label className="relative cursor-pointer bg-white dark:bg-surface-700 rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none">
                     <span>Upload files</span>
-                    <input type="file" multiple accept="image/*" onChange={(e) => setImages(e.target.files)} className="sr-only" />
+                    <input type="file" multiple accept="image/*" onChange={(e) => setSelectedImages(e.target.files)} className="sr-only" />
                   </label>
                   <p className="pl-1">or drag and drop</p>
                 </div>
-                <p className="text-xs text-surface-500">PNG, JPG, GIF up to 5MB (Max 5 files)</p>
+                <p className="text-xs text-surface-500">PNG, JPG, or GIF. Up to 5 files, 5 MB each.</p>
               </div>
             </div>
-            {images.length > 0 && <Badge variant="success">{images.length} file(s) selected</Badge>}
+            {imageError && <p role="alert" className="text-sm text-rose-600">{imageError}</p>}
+            {images.length > 0 && <ul className="space-y-1 text-xs text-surface-600 dark:text-surface-300">{images.map((image) => <li key={`${image.name}-${image.lastModified}`} className="truncate">{image.name}</li>)}</ul>}
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchUsers, blockUser, unblockUser, verifyWorker, rejectWorkerVerification, connectWorkerPayoutAccount } from '@/store/slices/adminSlice';
 import Card from '@/components/ui/Card';
@@ -10,6 +11,8 @@ import SearchBar from '@/components/ui/SearchBar';
 
 const AdminUsers = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
+  const isVerificationQueue = location.pathname === '/admin/verifications';
   const { users, totalUsers, loading } = useAppSelector((state) => state.admin);
   const [roleFilter, setRoleFilter] = useState(''); // 'customer', 'provider', ''
   const [search, setSearch] = useState('');
@@ -18,13 +21,19 @@ const AdminUsers = () => {
   const [payoutError, setPayoutError] = useState('');
   const [savingPayout, setSavingPayout] = useState(false);
 
+  const userFilters = {
+    role: isVerificationQueue ? 'provider' : roleFilter,
+    search,
+    ...(isVerificationQueue ? { verificationStatus: 'Pending' } : {}),
+  };
+
   useEffect(() => {
-    dispatch(fetchUsers({ role: roleFilter, search }));
-  }, [dispatch, roleFilter, search]);
+    dispatch(fetchUsers(userFilters));
+  }, [dispatch, isVerificationQueue, roleFilter, search]);
 
   const handleAction = async (actionFn, id) => {
     await dispatch(actionFn(id));
-    dispatch(fetchUsers({ role: roleFilter, search })); // Refresh list
+    dispatch(fetchUsers(userFilters)); // Refresh list
   };
 
   const handlePayoutConnect = async (event) => {
@@ -36,7 +45,7 @@ const AdminUsers = () => {
     if (connectWorkerPayoutAccount.fulfilled.match(result)) {
       setPayoutWorker(null);
       setLinkedAccountId('');
-      dispatch(fetchUsers({ role: roleFilter, search }));
+      dispatch(fetchUsers(userFilters));
     } else {
       setPayoutError(result.payload || 'Could not connect payout account');
     }
@@ -46,12 +55,14 @@ const AdminUsers = () => {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-bold text-surface-900 dark:text-white mb-6">User Management ({totalUsers})</h1>
+      <h1 className="mb-6 text-2xl font-bold text-surface-900 dark:text-white sm:text-3xl">
+        {isVerificationQueue ? `Worker verifications (${totalUsers})` : `User Management (${totalUsers})`}
+      </h1>
 
-      <Card className="dark:bg-surface-800 p-4 mb-6">
+      <Card className="mb-6 p-4 dark:bg-surface-800">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <SearchBar onSearch={(q) => setSearch(q)} placeholder="Search by email..." className="flex-1 w-full md:w-auto" />
-          <select 
+          {!isVerificationQueue && <select
             value={roleFilter} 
             onChange={(e) => setRoleFilter(e.target.value)}
             className="px-3 py-2.5 border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-700 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500"
@@ -59,7 +70,7 @@ const AdminUsers = () => {
             <option value="">All Roles</option>
             <option value="customer">Customers</option>
             <option value="provider">Workers</option>
-          </select>
+          </select>}
         </div>
       </Card>
 
@@ -115,6 +126,7 @@ const AdminUsers = () => {
                 </td>
               </tr>
             ))}
+            {users.length === 0 && <tr><td colSpan="6" className="px-4 py-12 text-center text-sm text-surface-500">{isVerificationQueue ? 'No workers are waiting for verification.' : 'No users match these filters.'}</td></tr>}
           </tbody>
         </table>
       </div>

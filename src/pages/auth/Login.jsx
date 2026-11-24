@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginUser, clearAuthError } from '@/store/slices/authSlice';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector((state) => state.auth);
 
@@ -19,12 +21,18 @@ const Login = () => {
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
       
-      // HARD REDIRECT - This is bulletproof. It forces the browser to refresh
-      // and load the app from scratch with the new localStorage token.
       const role = result.user.role;
-      if (role === 'admin') window.location.href = '/admin';
-      else if (role === 'provider') window.location.href = '/worker/home';
-      else window.location.href = '/customer/home';
+      const defaultPath = role === 'admin' ? '/admin' : role === 'provider' ? '/worker/home' : '/customer/home';
+      const requestedRoute = location.state?.from;
+      const requestedPath = requestedRoute?.pathname;
+      const requestedUrl = requestedPath
+        ? `${requestedPath}${requestedRoute.search || ''}${requestedRoute.hash || ''}`
+        : null;
+      const allowedPrefix = role === 'admin' ? '/admin' : role === 'provider' ? '/worker/' : '/customer/';
+      const canReturnToRequestedPage = requestedPath && (
+        requestedPath === allowedPrefix || requestedPath.startsWith(allowedPrefix)
+      );
+      navigate(canReturnToRequestedPage ? requestedUrl : defaultPath, { replace: true });
 
     } catch (err) {
       console.error("Login failed:", err);
@@ -40,6 +48,7 @@ const Login = () => {
       <Input 
         label="Email Address" 
         type="email" 
+        autoComplete="email"
         value={email} 
         onChange={(e) => setEmail(e.target.value)} 
         required 
@@ -47,6 +56,7 @@ const Login = () => {
       <Input 
         label="Password" 
         type="password" 
+        autoComplete="current-password"
         value={password} 
         onChange={(e) => setPassword(e.target.value)} 
         required 

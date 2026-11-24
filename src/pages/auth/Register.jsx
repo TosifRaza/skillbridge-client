@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerUser, clearAuthError } from '@/store/slices/authSlice';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector((state) => state.auth);
 
-  const [formData, setFormData] = useState({ email: '', password: '', role: 'customer' });
+  const [formData, setFormData] = useState(() => ({
+    email: '',
+    password: '',
+    role: searchParams.get('role') === 'provider' ? 'provider' : 'customer',
+  }));
   const { email, password, role } = formData;
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -46,6 +51,7 @@ const Register = () => {
         <Input 
           label="Email Address" 
           type="email" 
+          autoComplete="email"
           name="email"
           value={email} 
           onChange={handleChange} 
@@ -55,6 +61,10 @@ const Register = () => {
         <Input 
           label="Password" 
           type="password" 
+          autoComplete="new-password"
+          minLength={8}
+          pattern="(?=.*[0-9]).{8,}"
+          title="Use at least 8 characters and include a number."
           name="password"
           value={password} 
           onChange={handleChange} 

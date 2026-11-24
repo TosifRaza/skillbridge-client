@@ -3,12 +3,13 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineLogout, HiOutlinePlus, HiOutlineCreditCard } from 'react-icons/hi';
-import { SocketProvider } from '@/context/SocketContext';
+import { HiOutlineHome, HiOutlineBriefcase, HiOutlineChatAlt, HiOutlineLogout, HiOutlinePlus, HiOutlineCreditCard, HiOutlineSearch } from 'react-icons/hi';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/customer/home' },
-  { icon: HiOutlineBriefcase, label: 'My jobs', path: '/customer/jobs' },
+  { icon: HiOutlineSearch, label: 'Discover', path: '/customer/services' },
+  { icon: HiOutlineBriefcase, label: 'Jobs', path: '/customer/jobs' },
+  { icon: HiOutlineCreditCard, label: 'Wallet', path: '/customer/wallet' },
   { icon: HiOutlineChatAlt, label: 'Messages', path: '/customer/chat' },
 ];
 
@@ -20,7 +21,6 @@ const CustomerLayout = () => {
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'there';
 
   return (
-    <SocketProvider>
       <div className="portal-shell min-h-screen bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100">
         <aside className="portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col text-white lg:flex">
           <Link to="/customer/home" className="flex h-[68px] items-center gap-3 px-6">
@@ -54,6 +54,7 @@ const CustomerLayout = () => {
             <div className="hidden lg:block"><p className="text-[11px] font-medium text-slate-400">CUSTOMER WORKSPACE</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Good to see you, {displayName}</p></div>
             <div className="ml-auto flex items-center gap-2.5 sm:gap-4">
               <DarkModeToggle />
+              <button type="button" onClick={handleLogout} aria-label="Sign out" title="Sign out" className="rounded-lg p-2 text-surface-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-surface-300 dark:hover:bg-rose-950/30 lg:hidden"><HiOutlineLogout className="h-5 w-5" /></button>
               <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-700 sm:block" />
               <Link to="/customer/profile" title="Open profile" className="group flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-indigo-50 dark:hover:bg-indigo-950/40">
                 <Avatar src={user?.avatar?.url} name={user?.fullName || user?.email} size="sm" />
@@ -64,13 +65,12 @@ const CustomerLayout = () => {
               </Link>
             </div>
           </header>
-          <main className="portal-main mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6"> <Outlet /> </main>
+          <main className="portal-main mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-6 lg:pb-8"> <Outlet /> </main>
         </div>
-        <nav className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-3 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
+        <nav aria-label="Customer navigation" className="portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden">
           {navItems.map(({ icon: Icon, label, path }) => <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}><Icon className="h-5 w-5"/><span>{label}</span></NavLink>)}
         </nav>
       </div>
-    </SocketProvider>
   );
 };
 

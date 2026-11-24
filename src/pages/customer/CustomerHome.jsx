@@ -39,37 +39,6 @@ const calculateProfileCompletion = (user) => {
   return score;
 };
 
-// Fallback featured providers if database has few workers initially
-const fallbackProviders = [
-  {
-    _id: 'sample-1',
-    name: 'Arjun Cleaning Services',
-    rating: 4.8,
-    reviews: 128,
-    specialty: 'Home Cleaning',
-    price: '₹449',
-    initial: 'A',
-  },
-  {
-    _id: 'sample-2',
-    name: 'Rahul Movers',
-    rating: 4.9,
-    reviews: 256,
-    specialty: 'Moving Help',
-    price: '₹699',
-    initial: 'R',
-  },
-  {
-    _id: 'sample-3',
-    name: 'Priya Gardens',
-    rating: 4.7,
-    reviews: 85,
-    specialty: 'Gardening',
-    price: '₹399',
-    initial: 'P',
-  },
-];
-
 const CustomerHome = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -167,23 +136,20 @@ const CustomerHome = () => {
     return list.slice(0, 4);
   }, [proposals, jobs]);
 
-  // Providers to display: real DB workers combined with fallback to ensure rich display
-  const displayedProviders = useMemo(() => {
-    if (workers && workers.length > 0) {
-      return workers.slice(0, 4).map((w) => ({
-        _id: w._id,
-        name: w.fullName || w.email.split('@')[0],
-        rating: Number(w.averageRating || 5.0).toFixed(1),
-        reviews: Number(w.totalReviews || 0),
-        specialty: w.skills?.length > 0 ? w.skills.slice(0, 2).join(', ') : 'Home & Local Services',
-        price: 'From ₹499',
-        initial: (w.fullName || w.email || 'W').charAt(0).toUpperCase(),
-        avatar: w.avatar?.url,
-        isVerified: w.verificationStatus === 'Verified',
-      }));
-    }
-    return fallbackProviders;
-  }, [workers]);
+  // Only render providers returned by the API; fabricated sample profiles mislead customers.
+  const displayedProviders = useMemo(() => workers.slice(0, 4).map((worker) => {
+    const name = worker.fullName || worker.email?.split('@')[0] || 'Professional';
+    return {
+      _id: worker._id,
+      name,
+      rating: Number(worker.averageRating || 0),
+      reviews: Number(worker.totalReviews || 0),
+      specialty: worker.skills?.length ? worker.skills.slice(0, 2).join(', ') : 'Skills not added yet',
+      initial: name.charAt(0).toUpperCase(),
+      avatar: worker.avatar?.url,
+      isVerified: worker.verificationStatus === 'Verified',
+    };
+  }), [workers]);
 
   const handleSearch = (query) => {
     if (query && query.trim()) {
@@ -277,7 +243,15 @@ const CustomerHome = () => {
               </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            {displayedProviders.length === 0 ? (
+              <Card className="p-6 text-center dark:bg-surface-800">
+                <p className="font-semibold text-surface-800 dark:text-white">No professional profiles are available yet.</p>
+                <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">Browse services to find help, or check back soon as providers join.</p>
+                <Link to="/customer/services" className="mt-4 inline-flex justify-center">
+                  <Button size="sm">Browse Services</Button>
+                </Link>
+              </Card>
+            ) : <div className="grid gap-4 md:grid-cols-2">
               {displayedProviders.map((provider) => (
                 <Card
                   key={provider._id}
@@ -308,20 +282,22 @@ const CustomerHome = () => {
                       )}
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <StarRating rating={Number(provider.rating)} size="sm" />
-                      <span className="text-xs text-surface-500 dark:text-surface-400">
-                        {provider.rating} ({provider.reviews})
-                      </span>
+                      {provider.reviews > 0 ? (
+                        <>
+                          <StarRating rating={provider.rating} size="sm" />
+                          <span className="text-xs text-surface-500 dark:text-surface-400">
+                            {provider.rating.toFixed(1)} ({provider.reviews})
+                          </span>
+                        </>
+                      ) : <span className="text-xs text-surface-500 dark:text-surface-400">New professional</span>}
                     </div>
                     <p className="mt-1 truncate text-xs text-surface-600 dark:text-surface-300">
                       {provider.specialty}
                     </p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                        {provider.price}
-                      </span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">View profile for details</span>
                       <div className="flex items-center gap-2">
-                        {provider._id && !provider._id.startsWith('sample') && (
+                        {provider._id && (
                           <Link to={`/customer/worker/${provider._id}`}>
                             <Button size="sm" variant="outline">
                               Profile
@@ -340,7 +316,7 @@ const CustomerHome = () => {
                   </div>
                 </Card>
               ))}
-            </div>
+            </div>}
           </div>
 
           {/* Popular Categories */}

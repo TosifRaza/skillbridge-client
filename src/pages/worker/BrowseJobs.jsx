@@ -13,10 +13,11 @@ import { PHASE_1_SERVICES } from '@/constants/services';
 
 const BrowseJobs = () => {
   const dispatch = useAppDispatch();
-  const { jobs, totalPages, page, loading } = useAppSelector((state) => state.job);
+  const { jobs, totalPages, currentPage, loading, error } = useAppSelector((state) => state.job);
   const [applicationStatuses, setApplicationStatuses] = useState(null);
   
   const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(1);
   const [category, setCategory] = useState('All');
   const [serviceType, setServiceType] = useState('all');
 
@@ -58,27 +59,28 @@ const BrowseJobs = () => {
       <Card className="dark:bg-surface-800 p-4 mb-8">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="flex-1 w-full">
-            <SearchBar onSearch={(q) => setKeyword(q)} placeholder="Search jobs by title or description..." />
+            <SearchBar onSearch={(q) => { setKeyword(q); setPage(1); }} placeholder="Search jobs by title or description..." />
           </div>
           <select 
             value={category} 
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => { setCategory(e.target.value); setPage(1); }}
             className="w-full md:w-48 px-3 py-2.5 border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-700 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="All">All Categories</option>
             {PHASE_1_SERVICES.map(s => <option key={s.id} value={s.name}>{s.emoji} {s.name}</option>)}
           </select>
           <div className="flex gap-2 w-full md:w-auto">
-            <button onClick={() => setServiceType('all')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'all' ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border border-primary-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>All</button>
-            <button onClick={() => setServiceType('local')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'local' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>📍 Local</button>
-            <button onClick={() => setServiceType('digital')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'digital' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>💻 Digital</button>
+            <button onClick={() => { setServiceType('all'); setPage(1); }} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'all' ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border border-primary-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>All</button>
+            <button onClick={() => { setServiceType('local'); setPage(1); }} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'local' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>📍 Local</button>
+            <button onClick={() => { setServiceType('digital'); setPage(1); }} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition ${serviceType === 'digital' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200' : 'bg-white dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-600'}`}>💻 Digital</button>
           </div>
         </div>
       </Card>
 
       {/* Job Listings */}
-      {loading ? <div className="flex justify-center py-16"><Spinner /></div> : 
-       jobs.length > 0 ? (
+      {loading ? <div className="flex justify-center py-16"><Spinner /></div> : error ? (
+        <EmptyState icon="!" title="Could not load jobs" description={error} />
+       ) : jobs.length > 0 ? (
         <div className="space-y-4">
           {jobs.map(job => {
             const applicationStatus = applicationStatuses?.[job._id];
@@ -113,12 +115,12 @@ const BrowseJobs = () => {
             );
           })}
           
-          {/* Pagination Placeholder */}
+          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-8 gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => dispatch(fetchAvailableJobs({ page: page - 1 }))}>Previous</Button>
-              <span className="py-2 px-3 text-sm text-surface-600 dark:text-surface-300">Page {page} of {totalPages}</span>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => dispatch(fetchAvailableJobs({ page: page + 1 }))}>Next</Button>
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</Button>
+              <span className="py-2 px-3 text-sm text-surface-600 dark:text-surface-300">Page {currentPage} of {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Next</Button>
             </div>
           )}
         </div>

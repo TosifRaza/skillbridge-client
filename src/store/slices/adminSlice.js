@@ -67,16 +67,24 @@ const adminSlice = createSlice({
   reducers: { clearAdminError: (state) => { state.error = null; } },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboardStats.fulfilled, (state, action) => { state.stats = action.payload; })
-      .addCase(fetchUsers.fulfilled, (state, action) => { state.users = action.payload.users; state.totalUsers = action.payload.total; })
+      .addCase(fetchDashboardStats.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchDashboardStats.fulfilled, (state, action) => { state.loading = false; state.stats = action.payload; })
+      .addCase(fetchDashboardStats.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Could not load dashboard data'; })
+      .addCase(fetchUsers.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchUsers.fulfilled, (state, action) => { state.loading = false; state.users = action.payload.users; state.totalUsers = action.payload.total; })
+      .addCase(fetchUsers.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Could not load users'; })
       .addCase(blockUser.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(unblockUser.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(verifyWorker.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(rejectWorkerVerification.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? action.payload : u); })
       .addCase(connectWorkerPayoutAccount.fulfilled, (state, action) => { state.users = state.users.map(u => u._id === action.payload._id ? { ...u, ...action.payload } : u); })
-      .addCase(fetchAdminJobs.fulfilled, (state, action) => { state.jobs = action.payload.jobs; state.totalJobs = action.payload.total; })
+      .addCase(fetchAdminJobs.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchAdminJobs.fulfilled, (state, action) => { state.loading = false; state.jobs = action.payload.jobs; state.totalJobs = action.payload.total; })
+      .addCase(fetchAdminJobs.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Could not load jobs'; })
       .addCase(deleteJob.fulfilled, (state, action) => { state.jobs = state.jobs.filter(j => j._id !== action.payload); })
-      .addCase(fetchReports.fulfilled, (state, action) => { state.reports = action.payload.reports; state.totalReports = action.payload.total; })
+      .addCase(fetchReports.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchReports.fulfilled, (state, action) => { state.loading = false; state.reports = action.payload.reports; state.totalReports = action.payload.total; })
+      .addCase(fetchReports.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Could not load reports'; })
       .addCase(resolveReport.fulfilled, (state, action) => { state.reports = state.reports.map(r => r._id === action.payload._id ? action.payload : r); });
   },
 });

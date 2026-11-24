@@ -765,8 +765,8 @@ export const appRouter = createBrowserRouter([
   ]},
 
   // AUTH
-  { path: '/auth/login', element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Login /></div></div> },
-  { path: '/auth/register', element: <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-900"><div className="bg-white dark:bg-surface-800 p-8 w-full max-w-md rounded-2xl shadow-large border border-surface-100 dark:border-surface-700"><Register /></div></div> },
+  { path: '/auth/login', element: <div className="flex min-h-dvh items-center justify-center bg-surface-50 px-4 py-6 dark:bg-surface-900"><div className="w-full max-w-md rounded-2xl border border-surface-100 bg-white p-5 shadow-large dark:border-surface-700 dark:bg-surface-800 sm:p-8"><Login /></div></div> },
+  { path: '/auth/register', element: <div className="flex min-h-dvh items-center justify-center bg-surface-50 px-4 py-6 dark:bg-surface-900"><div className="w-full max-w-md rounded-2xl border border-surface-100 bg-white p-5 shadow-large dark:border-surface-700 dark:bg-surface-800 sm:p-8"><Register /></div></div> },
 
   // CUSTOMER PORTAL
   { element: <CustomerRoute><CustomerLayout /></CustomerRoute>, children: [
@@ -777,7 +777,7 @@ export const appRouter = createBrowserRouter([
     { path: '/customer/jobs/post', element: <PostJob /> },
     { path: '/customer/jobs/:id', element: <CustomerJobDetail /> },
     { path: '/customer/profile', element: <CustomerProfile /> },
-    { path: '/customer/wallet', element: <Navigate to="/customer/jobs" replace /> },
+    { path: '/customer/wallet', element: <CustomerWallet /> },
     { path: '/customer/chat', element: <CustomerChat /> },
   ]},
 

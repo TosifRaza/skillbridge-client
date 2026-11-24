@@ -174,7 +174,7 @@ const PublicLayout = () => {
               onMouseEnter={() => setServicesOpen(true)} 
               onMouseLeave={() => setServicesOpen(false)}
             >
-              <button className="hover:text-primary-600 dark:hover:text-primary-400 transition font-semibold py-5">
+              <button type="button" aria-expanded={servicesOpen} onClick={() => setServicesOpen((open) => !open)} className="hover:text-primary-600 dark:hover:text-primary-400 transition font-semibold py-5">
                 Find Services
               </button>
 
@@ -205,6 +205,7 @@ const PublicLayout = () => {
             <NavLink to="/how-it-works" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>How it Works</NavLink>
             <NavLink to="/safety" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>Safety & Trust</NavLink>
             <NavLink to="/pricing" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>Pricing</NavLink>
+            <NavLink to="/contact" className={({isActive}) => isActive ? "text-primary-600 dark:text-primary-400 font-semibold" : "hover:text-primary-600 dark:hover:text-primary-400 transition"}>Contact</NavLink>
           </div>
 
           {/* Right Section: Location, Dark Mode & Auth */}
@@ -232,7 +233,7 @@ const PublicLayout = () => {
             </Link>
 
             {/* Mobile Hamburger */}
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-surface-700 dark:text-surface-300">
+            <button type="button" aria-expanded={mobileMenuOpen} aria-controls="public-mobile-menu" aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-lg p-2 text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800 lg:hidden">
               {mobileMenuOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
             </button>
           </div>
@@ -240,7 +241,7 @@ const PublicLayout = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white dark:bg-surface-900 border-t border-surface-100 dark:border-surface-700 shadow-medium animate-fade-in">
+          <div id="public-mobile-menu" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-surface-100 bg-white shadow-medium animate-fade-in dark:border-surface-700 dark:bg-surface-900 lg:hidden">
             <div className="p-4 space-y-2">
               <select 
                 value={city} 
@@ -256,12 +257,14 @@ const PublicLayout = () => {
                   <span>{service.emoji}</span> <span className="font-medium">{service.name}</span>
                 </Link>
               ))}
+              <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg p-2 font-semibold text-primary-600 dark:text-primary-400">View all services</Link>
 
               <div className="border-t border-surface-100 dark:border-surface-700 pt-2 mt-2 space-y-2">
                 <Link to="/become-provider" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-primary-600 dark:text-primary-400">Become a Provider</Link>
                 <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">How it Works</Link>
                 <Link to="/safety" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Safety & Trust</Link>
                 <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Pricing</Link>
+                <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Contact support</Link>
               </div>
 
               {/* Mobile Appearance Toggle */}
@@ -302,7 +305,7 @@ const PublicLayout = () => {
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Company</h4>
-            <ul className="space-y-2 text-sm"><li><Link to="/how-it-works" className="hover:text-white transition">How it Works</Link></li><li><Link to="/safety" className="hover:text-white transition">Safety</Link></li><li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li></ul>
+            <ul className="space-y-2 text-sm"><li><Link to="/how-it-works" className="hover:text-white transition">How it Works</Link></li><li><Link to="/safety" className="hover:text-white transition">Safety</Link></li><li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li><li><Link to="/contact" className="hover:text-white transition">Contact</Link></li></ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Workers</h4>

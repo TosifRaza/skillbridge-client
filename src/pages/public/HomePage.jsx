@@ -13,7 +13,7 @@ const HomePage = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/services?q=${searchQuery}`);
+      navigate(`/services?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -49,7 +49,7 @@ const HomePage = () => {
             <div className="mt-4 flex items-center gap-4 justify-center lg:justify-start text-xs text-surface-400">
               <span>Popular:</span>
               {['Cleaning', 'Plumber', 'Web Dev'].map(tag => (
-                <button key={tag} onClick={() => navigate(`/services?q=${tag}`)} className="hover:text-primary-600 underline">
+                <button key={tag} onClick={() => navigate(`/services?q=${encodeURIComponent(tag)}`)} className="hover:text-primary-600 underline">
                   {tag}
                 </button>
               ))}
