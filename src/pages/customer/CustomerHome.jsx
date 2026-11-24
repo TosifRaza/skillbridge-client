@@ -183,20 +183,7 @@ const CustomerHome = () => {
             <h1 className="text-[24px] font-extrabold leading-[1.13] tracking-tight"><span className="block">👋 {getGreeting()},</span><span className="block">{displayName.split(' ')[0]}!</span></h1>
             <p className="mt-2 text-[14px] leading-[1.35] text-violet-100">Find work, hire help, and get things done easily.</p>
           </div>
-          <svg aria-hidden="true" viewBox="0 0 160 180" className="absolute bottom-0 right-1 z-10 h-[143px] w-[132px] sm:right-5">
-            <circle cx="94" cy="88" r="69" fill="#c4b5fd" fillOpacity=".64" />
-            <path d="M65 180c2-36 10-57 28-68h35c18 11 26 32 28 68H65Z" fill="#4c25b8" />
-            <path d="M90 111l18 23 18-23" fill="#fff" fillOpacity=".85" />
-            <path d="M103 127l5 5 5-5-5 21-5-21Z" fill="#7c3aed" />
-            <path d="M117 38c23 0 36 17 34 42l-4 19h-59l-6-18c-7-23 9-43 35-43Z" fill="#f2a36b" />
-            <path d="M82 73c-6-31 10-53 39-53 24 0 39 14 40 37-9-8-19-12-32-12-10 13-25 20-47 21Z" fill="#24124e" />
-            <path d="M89 47c8-19 23-29 42-28 16 1 28 8 34 21-18-4-30 1-39 10-9 7-21 10-37 9Z" fill="#7c3aed" />
-            <path d="M96 71v5m32-5v5" stroke="#1d1632" strokeWidth="4" strokeLinecap="round" />
-            <path d="M104 92c8 8 18 8 26 0" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-            <path d="M67 177c-5-19-10-37-20-48-5-6-12-7-16-2-4 5-1 11 4 17l-3-25c-1-7 3-11 8-11s9 3 9 9l2 13 2-22c1-7 5-9 10-8 5 1 7 5 6 11l-1 24c9-7 16-5 18 1 2 7-4 12-11 18l-2 23H67Z" fill="#f2a36b" />
-            <path d="M45 108l-1-15c0-6 3-9 8-9 5 0 8 4 8 9v13" fill="none" stroke="#f2a36b" strokeWidth="8" strokeLinecap="round" />
-            <path d="M53 71l8-13m-18 8-7-8m33 3 3-14" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-          </svg>
+          <img src="/images/skillbridge-worker-hero.png" alt="Friendly SkillBridge service professional giving a thumbs-up" className="absolute bottom-0 right-0 z-10 h-[146px] w-[142px] object-contain object-bottom drop-shadow-[0_8px_10px_rgba(30,15,80,.2)] sm:right-4" />
           <span aria-hidden="true" className="absolute bottom-8 right-[132px] z-10 text-xl text-white">✦</span>
         </section>
 
@@ -213,8 +200,8 @@ const CustomerHome = () => {
           <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Popular Services</h2><Link to="/customer/services" className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></Link></div>
           <div className="grid grid-cols-4 gap-2">
             {mobileServices.map(({ id, label, emoji, service }) => (
-              <Link key={id} to={`/customer/jobs/post?category=${encodeURIComponent(service?.name || label)}`} className="flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-[20px] border border-slate-200 bg-white px-1.5 py-2 text-center shadow-[0_5px_15px_rgba(25,30,70,.06)] transition active:scale-[.97] dark:border-slate-700 dark:bg-surface-800">
-                <span className="text-[36px] leading-none">{emoji}</span><span className="text-[12px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{label}</span>
+              <Link key={id} to={`/customer/jobs/post?category=${encodeURIComponent(service?.name || label)}`} className="flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[18px] border border-slate-200/90 bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(36,32,77,.055)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_8px_20px_rgba(87,52,170,.10)] active:scale-[.97] dark:border-slate-700 dark:bg-surface-800">
+                <span className="flex h-[38px] w-[42px] items-center justify-center rounded-[13px] bg-violet-50 text-[27px] leading-none dark:bg-violet-950/40">{emoji}</span><span className="text-[11px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{label}</span>
               </Link>
             ))}
           </div>

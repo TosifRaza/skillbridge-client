@@ -69,7 +69,7 @@ const CustomerServices = () => {
         <section className="relative min-h-[174px] overflow-hidden rounded-[26px] bg-gradient-to-br from-[#382080] via-[#612dd2] to-[#823ff1] px-5 py-5 text-white shadow-[0_14px_32px_rgba(91,48,194,.2)]">
           <div className="absolute -right-5 -top-5 h-40 w-40 rounded-full bg-white/15"/><div className="absolute bottom-[-52px] right-7 h-36 w-36 rounded-full bg-violet-200/30"/>
           <div className="relative z-10 max-w-[68%]"><h1 className="text-[29px] font-extrabold leading-tight tracking-tight">Find Services</h1><p className="mt-2 text-[15px] leading-snug text-violet-100">Choose a service or search what you need.</p></div>
-          <div aria-hidden="true" className="absolute bottom-0 right-3 z-10 flex h-[144px] w-[112px] items-end justify-center overflow-hidden rounded-t-full bg-violet-200/30 text-[88px] leading-none sm:right-8">🧑🏻‍🔧</div>
+          <img src="/images/skillbridge-worker-hero.png" alt="Friendly SkillBridge service professional giving a thumbs-up" className="absolute bottom-0 right-0 z-10 h-[136px] w-[126px] object-contain object-bottom drop-shadow-[0_8px_10px_rgba(30,15,80,.2)] sm:right-4" />
           <span aria-hidden="true" className="absolute bottom-8 right-[120px] z-10 text-xl">✦</span>
         </section>
 
@@ -89,7 +89,7 @@ const CustomerServices = () => {
         <section>
           <div className="mb-3 flex items-center justify-between px-1"><h2 className="text-[20px] font-extrabold tracking-tight text-slate-950 dark:text-white">Categories</h2><button type="button" onClick={() => setActiveCategory('All')} className="flex items-center gap-1 text-[14px] font-bold text-violet-700 dark:text-violet-300">See All <HiOutlineArrowRight className="h-4 w-4"/></button></div>
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {servicesWithRatings.map((service) => <button key={service.id} type="button" onClick={() => setActiveCategory(service.name)} className={`flex min-h-[105px] flex-col items-center justify-center gap-2 rounded-[20px] border bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(25,30,70,.04)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}><span className="text-[31px] leading-none">{service.emoji}</span><span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span></button>)}
+            {servicesWithRatings.map((service) => <button key={service.id} type="button" onClick={() => setActiveCategory(service.name)} className={`flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-[18px] border bg-white px-1 py-2 text-center shadow-[0_4px_12px_rgba(25,30,70,.05)] transition active:scale-[.97] dark:bg-surface-800 ${activeCategory === service.name ? 'border-violet-400 ring-2 ring-violet-100 dark:ring-violet-900/60' : 'border-slate-200 dark:border-slate-700'}`}><span className="flex h-9 w-10 items-center justify-center rounded-xl bg-violet-50 text-[26px] leading-none dark:bg-violet-950/40">{service.emoji}</span><span className="text-[10px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{service.label || service.name}</span></button>)}
           </div>
         </section>
 
