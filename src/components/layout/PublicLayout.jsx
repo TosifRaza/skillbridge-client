@@ -273,22 +273,6 @@ const PublicLayout = () => {
                 <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-primary-600 px-3 text-sm font-bold text-white transition hover:bg-primary-700">Registration</Link>
               </div>
               
-              <p className="text-xs text-surface-400 dark:text-surface-500 font-bold uppercase mt-4 mb-2">Services</p>
-              {PHASE_1_SERVICES.map(service => (
-                <Link key={service.id} to={service.slug} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 text-surface-800 dark:text-surface-200">
-                  <span>{service.emoji}</span> <span className="font-medium">{service.name}</span>
-                </Link>
-              ))}
-              <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg p-2 font-semibold text-primary-600 dark:text-primary-400">View all services</Link>
-
-              <div className="border-t border-surface-100 dark:border-surface-700 pt-2 mt-2 space-y-2">
-                <Link to="/become-provider" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-semibold text-primary-600 dark:text-primary-400">Become a Provider</Link>
-                <Link to="/how-it-works" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">How it Works</Link>
-                <Link to="/safety" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Safety & Trust</Link>
-                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Pricing</Link>
-                <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="block p-2 font-medium text-surface-700 dark:text-surface-300">Contact support</Link>
-              </div>
-
               {/* Mobile Appearance Toggle */}
               <div className="flex items-center justify-between mt-4 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg">
                 <span className="text-sm font-medium text-surface-700 dark:text-surface-300">Appearance</span>
