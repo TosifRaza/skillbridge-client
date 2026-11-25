@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     listeners,
     dispatch: vi.fn((action) => action?.type === 'upload' ? { unwrap: () => Promise.resolve('https://images.test/photo.jpg') } : action),
     socket: {
+      connected: true,
       on: vi.fn((event, handler) => listeners.set(event, handler)),
       off: vi.fn((event) => listeners.delete(event)),
       emit: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('@/store/hooks', () => ({
   }),
 }));
 vi.mock('@/context/SocketContext', () => ({ useSocket: () => mocks.socket }));
+vi.mock('@/api/axiosInstance', () => ({ default: { get: vi.fn().mockResolvedValue({ data: { data: { iceServers: [{ urls: 'stun:test' }] } } }) } }));
 vi.mock('@/store/slices/chatSlice', () => ({
   fetchChatHistory: (conversationId) => ({ type: 'history', conversationId }),
   addSocketMessage: (message) => ({ type: 'message', message }),
@@ -32,6 +34,7 @@ vi.mock('@/store/slices/chatSlice', () => ({
 }));
 
 import ChatInterface from './ChatInterface';
+import { CallManagerProvider } from '@/context/CallManager';
 
 class FakePeerConnection {
   static instances = [];
@@ -69,8 +72,19 @@ const project = {
 };
 
 const renderChat = () => render(
-  <ChatInterface conversationId="job_test" otherUserEmail="customer@example.test" project={project} userRole="provider" />,
+  <CallManagerProvider><ChatInterface conversationId="job_test" otherUserEmail="customer@example.test" project={project} userRole="provider" /></CallManagerProvider>,
 );
+
+const renderChatWithNavigation = () => {
+  const Harness = () => {
+    const [showChat, setShowChat] = useState(true);
+    return <CallManagerProvider>
+      <button type="button" onClick={() => setShowChat(false)}>Open profile</button>
+      {showChat && <ChatInterface conversationId="job_test" otherUserEmail="customer@example.test" project={project} userRole="provider" />}
+    </CallManagerProvider>;
+  };
+  return render(<Harness/>);
+};
 
 describe('chat audio/video calling', () => {
   let mediaStream;
@@ -136,7 +150,7 @@ describe('chat audio/video calling', () => {
     });
 
     await user.click(screen.getByRole('button', { name: 'Answer call' }));
-    await waitFor(() => expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true, video: true }));
+    await waitFor(() => expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true, video: { facingMode: 'user' } }));
     await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-answer', expect.objectContaining({ conversationId: 'job_test', callId: 'incoming-call', answer: { type: 'answer', sdp: 'fake-answer' } })));
 
     const peer = FakePeerConnection.instances[0];
@@ -171,6 +185,42 @@ describe('chat audio/video calling', () => {
     expect(screen.getByRole('button', { name: 'Turn camera on' })).toBeTruthy();
   });
 
+  it('minimizes and reopens without ending the call or stopping media', async () => {
+    const user = userEvent.setup();
+    renderChat();
+    await user.click(screen.getByRole('button', { name: 'Start audio call' }));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' })));
+    await user.click(screen.getByRole('button', { name: 'Minimize call' }));
+
+    expect(screen.getByRole('button', { name: 'Open call' })).toBeTruthy();
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith('call-end', expect.anything());
+    expect(mediaStream.tracks.every((track) => track.stop.mock.calls.length === 0)).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: 'Open call' }));
+    expect(screen.getByRole('button', { name: 'Minimize call' })).toBeTruthy();
+  });
+
+  it('keeps the call alive after the chat page unmounts during navigation', async () => {
+    const user = userEvent.setup();
+    renderChatWithNavigation();
+    await user.click(screen.getByRole('button', { name: 'Start audio call' }));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' })));
+    await user.click(screen.getByRole('button', { name: 'Minimize call' }));
+    await user.click(screen.getByRole('button', { name: 'Open profile' }));
+
+    expect(screen.getByRole('button', { name: 'Open call' })).toBeTruthy();
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith('call-end', expect.anything());
+    expect(mediaStream.tracks.every((track) => track.stop.mock.calls.length === 0)).toBe(true);
+  });
+
+  it('attaches the live camera stream to the floating local preview', async () => {
+    const user = userEvent.setup();
+    renderChat();
+    await user.click(screen.getByRole('button', { name: 'Start video call' }));
+    const localPreview = await screen.findByLabelText('Local video preview');
+    await waitFor(() => expect(localPreview.srcObject).toBe(mediaStream));
+  });
+
   it('shows a clear error when the browser denies camera or microphone access', async () => {
     const user = userEvent.setup();
     navigator.mediaDevices.getUserMedia.mockRejectedValueOnce(Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' }));
@@ -178,7 +228,7 @@ describe('chat audio/video calling', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start audio call' }));
 
-    expect(await screen.findByText('Allow camera and microphone access to start a call.')).toBeTruthy();
+    expect(await screen.findByText('Allow camera and microphone access in your browser settings, then try again.')).toBeTruthy();
     expect(FakePeerConnection.instances).toHaveLength(0);
     expect(mocks.socket.emit).not.toHaveBeenCalledWith('call-initiate', expect.anything());
   });

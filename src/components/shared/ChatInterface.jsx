@@ -224,31 +224,21 @@
 // };
 
 // export default ChatInterface;
-import { Fragment, useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
+import { Fragment, useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchChatHistory, addSocketMessage, updateSocketMessage, uploadChatImage, clearChat, markMessagesRead } from '@/store/slices/chatSlice';
 import { useSocket } from '@/context/SocketContext';
+import { useCallManager } from '@/context/CallManagerContext';
 import axiosInstance from '@/api/axiosInstance';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineMicrophone, HiOutlinePhoneMissedCall, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
+import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import { LuCheck, LuCheckCheck, LuClipboardCheck, LuDownload, LuFileText, LuPlus, LuSmile } from 'react-icons/lu';
 import { FaBroom } from 'react-icons/fa';
 import './ChatInterface.mobile.css';
 
-const PENDING_CALL_KEY = 'skillbridge:pending-incoming-call';
-const AUTO_ANSWER_CALL_KEY = 'skillbridge:auto-answer-call';
-const clearQueuedIncomingCall = (callId) => {
-  try {
-    const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
-    if (!callId || queuedCall?.callId === callId) window.sessionStorage.removeItem(PENDING_CALL_KEY);
-  } catch {
-    window.sessionStorage.removeItem(PENDING_CALL_KEY);
-  }
-  window.dispatchEvent(new CustomEvent('skillbridge:incoming-call-cleared', { detail: { callId } }));
-};
 const formatCallTime = (value) => value
   ? new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   : '—';
@@ -286,6 +276,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const socket = useSocket();
   const { messages, loading, error: historyError } = useAppSelector((state) => state.chat);
   const { user } = useAppSelector((state) => state.auth);
+  const participantId = project?.participant?._id;
   
   const [messageInput, setMessageInput] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
@@ -300,258 +291,18 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const [completionSent, setCompletionSent] = useState(false);
   const [completionPending, setCompletionPending] = useState(false);
   const [completionError, setCompletionError] = useState('');
-  const [callStatus, setCallStatus] = useState('idle');
-  const [callType, setCallType] = useState(null);
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStream, setRemoteStream] = useState(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isCameraOff, setIsCameraOff] = useState(false);
-  const [callError, setCallError] = useState('');
+  const { status: callStatus, startCall } = useCallManager();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const documentInputRef = useRef(null);
   const composerInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const peerConnectionRef = useRef(null);
-  const localStreamRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const localVideoRef = useRef(null);
-  const callIdRef = useRef(null);
-  const remoteAudioRef = useRef(null);
-  const callStatusRef = useRef(callStatus);
-  const pendingCandidatesRef = useRef([]);
-  const ringTimeoutRef = useRef(null);
-  const participantId = project?.participant?._id;
   const participantName = project?.participant?.fullName || otherUserEmail?.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || (userRole === 'customer' ? 'Your worker' : 'Customer');
   const ProjectIcon = project?.category === 'House Cleaning' ? FaBroom : HiOutlineBriefcase;
   const canComplete = userRole === 'provider' && project?._id && ['Assigned', 'In-Progress'].includes(project.status) && !project.workSubmittedAt && !completionSent;
   const hasDraft = messageInput.trim() || selectedImages.length > 0 || selectedDocument;
   const formattedBudget = project?.budget != null ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(project.budget) : null;
   const formattedDeadline = project?.deadline ? new Date(project.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-  useLayoutEffect(() => { callStatusRef.current = callStatus; }, [callStatus]);
-
-  const clearCall = useCallback(() => {
-    window.clearTimeout(ringTimeoutRef.current);
-    const activeCallId = callIdRef.current;
-    if (activeCallId) clearQueuedIncomingCall(activeCallId);
-    peerConnectionRef.current?.close();
-    peerConnectionRef.current = null;
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    localStreamRef.current = null;
-    pendingCandidatesRef.current = [];
-    callIdRef.current = null;
-    setLocalStream(null);
-    setRemoteStream(null);
-    setIncomingCall(null);
-    setCallStatus('idle');
-    setCallType(null);
-    setIsMuted(false);
-    setIsCameraOff(false);
-  }, []);
-
-  const createPeerConnection = useCallback(() => {
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
-    peerConnectionRef.current = peerConnection;
-    peerConnection.onicecandidate = ({ candidate }) => {
-      if (candidate && socket) socket.emit('call-ice-candidate', { conversationId, callId: callIdRef.current, candidate });
-    };
-    peerConnection.ontrack = ({ streams }) => setRemoteStream(streams[0]);
-    peerConnection.onconnectionstatechange = () => {
-      if (peerConnection.connectionState === 'connected') {
-        window.clearTimeout(ringTimeoutRef.current);
-        setCallStatus('connected');
-      }
-      if (peerConnection.connectionState === 'failed') {
-        setCallError('Could not connect the call. Check your network and try again.');
-        if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current });
-        clearCall();
-      }
-    };
-    return peerConnection;
-  }, [clearCall, conversationId, socket]);
-
-  const addPendingCandidates = useCallback(async () => {
-    const peerConnection = peerConnectionRef.current;
-    if (!peerConnection?.remoteDescription) return;
-    const candidates = pendingCandidatesRef.current.splice(0);
-    await Promise.all(candidates.map((candidate) => peerConnection.addIceCandidate(candidate).catch(() => {})));
-  }, []);
-
-  const startCall = async (type) => {
-    const peerId = project?.participant?._id;
-    if (!socket || !peerId) {
-      setCallError('Calls are unavailable because the other participant is not connected to this job.');
-      return;
-    }
-    setCallError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-      setCallType(type);
-      callIdRef.current = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-      const peerConnection = createPeerConnection();
-      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      socket.emit('call-initiate', { conversationId, callId: callIdRef.current, callType: type, offer: peerConnection.localDescription });
-      setCallStatus('calling');
-      ringTimeoutRef.current = window.setTimeout(() => {
-        if (callStatusRef.current !== 'connected') {
-          setCallError('No answer. You can try calling again.');
-          if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current, reason: 'no-answer' });
-          clearCall();
-        }
-      }, 35000);
-    } catch (error) {
-      clearCall();
-      setCallError(error.name === 'NotAllowedError' ? 'Allow camera and microphone access to start a call.' : 'Could not access your camera or microphone. Check your device settings.');
-    }
-  };
-
-  const answerCall = useCallback(async (callToAnswer) => {
-    if (!callToAnswer || !socket) return;
-    try {
-      const preparedMedia = window.__skillBridgeIncomingCallStream;
-      const stream = preparedMedia?.callId === callToAnswer.callId
-        ? preparedMedia.stream
-        : await navigator.mediaDevices.getUserMedia({ audio: true, video: callToAnswer.callType === 'video' });
-      if (preparedMedia?.callId === callToAnswer.callId) window.__skillBridgeIncomingCallStream = null;
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-      setCallType(callToAnswer.callType);
-      callIdRef.current = callToAnswer.callId;
-      const peerConnection = createPeerConnection();
-      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
-      pendingCandidatesRef.current = [...(callToAnswer.pendingCandidates || []), ...pendingCandidatesRef.current];
-      await peerConnection.setRemoteDescription(callToAnswer.offer);
-      await addPendingCandidates();
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.emit('call-answer', { conversationId, callId: callToAnswer.callId, answer: peerConnection.localDescription });
-      clearQueuedIncomingCall(callToAnswer.callId);
-      setIncomingCall(null);
-      setCallStatus('connecting');
-    } catch (error) {
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = null;
-      peerConnectionRef.current?.close();
-      peerConnectionRef.current = null;
-      callIdRef.current = callToAnswer.callId;
-      setLocalStream(null);
-      setCallStatus('incoming');
-      setCallError(error.name === 'NotAllowedError' ? 'Allow camera and microphone access, then tap Answer again.' : 'Could not join the call. Check your camera and microphone, then try again.');
-    }
-  }, [addPendingCandidates, conversationId, createPeerConnection, socket]);
-
-  const declineCall = () => {
-    if (incomingCall && socket) socket.emit('call-decline', { conversationId, callId: incomingCall.callId });
-    clearCall();
-  };
-
-  const endCall = () => {
-    if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current, reason: callStatusRef.current === 'calling' ? 'cancelled' : 'hangup' });
-    clearCall();
-  };
-
-  useEffect(() => {
-    if (!socket || !conversationId || callStatusRef.current !== 'idle') return;
-    const timer = window.setTimeout(() => {
-      if (callStatusRef.current !== 'idle') return;
-      try {
-        const queuedCall = JSON.parse(window.sessionStorage.getItem(PENDING_CALL_KEY) || 'null');
-        if (queuedCall?.conversationId !== conversationId) return;
-        callIdRef.current = queuedCall.callId;
-        pendingCandidatesRef.current = queuedCall.pendingCandidates || [];
-        setIncomingCall(queuedCall);
-        setCallType(queuedCall.callType);
-        setCallStatus('incoming');
-        setCallError('');
-        if (window.sessionStorage.getItem(AUTO_ANSWER_CALL_KEY) === queuedCall.callId) {
-          window.sessionStorage.removeItem(AUTO_ANSWER_CALL_KEY);
-          void answerCall(queuedCall);
-        }
-      } catch {
-        window.sessionStorage.removeItem(PENDING_CALL_KEY);
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [conversationId, answerCall, socket]);
-
-  useEffect(() => {
-    if (!socket) return undefined;
-
-    const onIncomingCall = (call) => {
-      if (call.conversationId !== conversationId) return;
-      if (callStatusRef.current !== 'idle') {
-        socket.emit('call-decline', { conversationId, callId: call.callId });
-        return;
-      }
-      window.sessionStorage.setItem(PENDING_CALL_KEY, JSON.stringify(call));
-      callIdRef.current = call.callId;
-      pendingCandidatesRef.current = [];
-      setIncomingCall(call);
-      setCallType(call.callType);
-      setCallStatus('incoming');
-      setCallError('');
-    };
-
-    const onCallAnswered = async (data) => {
-      if (data.conversationId !== conversationId || data.callId !== callIdRef.current || !peerConnectionRef.current) return;
-      try {
-        await peerConnectionRef.current.setRemoteDescription(data.answer);
-        await addPendingCandidates();
-        setCallStatus('connecting');
-      } catch {
-        setCallError('Could not establish the call. Please try again.');
-        clearCall();
-      }
-    };
-
-    const onIceCandidate = async (data) => {
-      if (data.conversationId !== conversationId || data.callId !== callIdRef.current || !data.candidate) return;
-      const peerConnection = peerConnectionRef.current;
-      if (!peerConnection?.remoteDescription) {
-        pendingCandidatesRef.current.push(data.candidate);
-        return;
-      }
-      try { await peerConnection.addIceCandidate(data.candidate); } catch { /* Ignore stale ICE candidates after a call ends. */ }
-    };
-
-    const onCallFinished = (data) => {
-      if (data.conversationId !== conversationId || data.callId !== callIdRef.current) return;
-      clearCall();
-    };
-
-    socket.on('call-incoming', onIncomingCall);
-    socket.on('call-answered', onCallAnswered);
-    socket.on('call-ice-candidate', onIceCandidate);
-    socket.on('call-declined', onCallFinished);
-    socket.on('call-ended', onCallFinished);
-    return () => {
-      socket.off('call-incoming', onIncomingCall);
-      socket.off('call-answered', onCallAnswered);
-      socket.off('call-ice-candidate', onIceCandidate);
-      socket.off('call-declined', onCallFinished);
-      socket.off('call-ended', onCallFinished);
-    };
-  }, [socket, conversationId, clearCall, addPendingCandidates]);
-
-  useEffect(() => {
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
-  }, [remoteStream]);
-
-  useEffect(() => {
-    if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
-  }, [localStream]);
-
-  useEffect(() => {
-    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = callType === 'audio' ? remoteStream : null;
-  }, [callType, remoteStream]);
-
   useEffect(() => {
     if (!lightbox) return undefined;
     const previousOverflow = document.body.style.overflow;
@@ -567,11 +318,6 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [lightbox]);
-
-  useEffect(() => () => {
-    if (callIdRef.current && socket) socket.emit('call-end', { conversationId, callId: callIdRef.current });
-    clearCall();
-  }, [clearCall, conversationId, socket]);
 
   // Fetch History & Join Room
   useEffect(() => {
@@ -847,8 +593,8 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
           {project?.title && <p className="mt-0.5 hidden max-w-56 truncate text-[10px] text-slate-400 md:block">{project.title}</p>}
         </div>
         <div className="project-chat-calls ml-auto flex shrink-0 items-center gap-1.5">
-          <button type="button" aria-label="Start audio call" title="Audio call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall('audio')} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlinePhone className="h-[18px] w-[18px]"/></button>
-          <button type="button" aria-label="Start video call" title="Video call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall('video')} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlineVideoCamera className="h-[18px] w-[18px]"/></button>
+          <button type="button" aria-label="Start audio call" title="Audio call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall({ type: 'audio', conversationId, participant: project?.participant })} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlinePhone className="h-[18px] w-[18px]"/></button>
+          <button type="button" aria-label="Start video call" title="Video call" disabled={!socket || !project?.participant?._id || callStatus !== 'idle'} onClick={() => startCall({ type: 'video', conversationId, participant: project?.participant })} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-surface-700 dark:bg-surface-800 dark:text-slate-300 dark:hover:bg-surface-700"><HiOutlineVideoCamera className="h-[18px] w-[18px]"/></button>
           {projectHref && <details className="project-chat-options relative">
             <summary aria-label="Conversation options" className="cursor-pointer list-none rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-surface-700"><HiOutlineDotsVertical className="h-5 w-5"/></summary>
             <Link to={projectHref} className="absolute right-0 top-full z-10 whitespace-nowrap rounded-xl border border-violet-100 bg-white px-3 py-2 text-xs font-semibold text-violet-800 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-violet-200">View job details</Link>
@@ -994,25 +740,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
         <img src={lightbox.images[lightbox.index]} alt={`Shared image ${lightbox.index + 1}`} onClick={(event) => event.stopPropagation()} className="max-h-[88dvh] max-w-[92vw] select-none object-contain shadow-2xl"/>
         {lightbox.images.length > 1 && <button type="button" onClick={(event) => { event.stopPropagation(); setLightbox((current) => ({ ...current, index: (current.index + 1) % current.images.length })); }} aria-label="Next image" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 sm:right-6"><HiOutlineChevronRight className="h-6 w-6"/></button>}
       </div>}
-      {callStatus !== 'idle' && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/10 bg-[#111827] text-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-7"><div><p className="text-sm font-semibold">{incomingCall?.caller?.name || participantName}</p><p className="mt-0.5 text-xs text-slate-400">{callStatus === 'incoming' ? `Incoming ${callType} call` : callStatus === 'calling' ? 'Calling…' : callStatus === 'connected' ? 'Connected' : 'Connecting…'}</p></div><button type="button" onClick={endCall} className="rounded-xl p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label="Close call"><HiOutlineX className="h-5 w-5"/></button></div>
-          <div className="relative flex min-h-[320px] items-center justify-center bg-[radial-gradient(ellipse_at_50%_45%,rgba(99,102,241,.28),transparent_48%),#0b1020] sm:min-h-[440px]">
-            {callType === 'audio' && <audio ref={remoteAudioRef} autoPlay className="hidden"/>}
-            {callType === 'video' && <video ref={remoteVideoRef} autoPlay playsInline className={`absolute inset-0 h-full w-full object-cover ${remoteStream ? '' : 'hidden'}`}/>}
-            {(!remoteStream || callType === 'audio') && <div className="flex flex-col items-center px-5 text-center"><div className="mb-5 rounded-full bg-gradient-to-br from-indigo-400 to-violet-700 p-1 shadow-[0_0_60px_rgba(99,102,241,.38)]"><Avatar src={incomingCall?.caller?.avatar || project?.participant?.avatar?.url} name={incomingCall?.caller?.name || participantName} size="lg"/></div><h3 className="text-xl font-bold">{incomingCall?.caller?.name || participantName}</h3><p className="mt-2 text-sm text-slate-400">{callStatus === 'incoming' ? 'They are waiting for you to answer' : callStatus === 'connected' ? `${callType === 'audio' ? 'Audio' : 'Video'} call in progress` : 'Waiting for them to join...'}</p></div>}
-            {callType === 'video' && localStream && <video ref={localVideoRef} autoPlay playsInline muted className={`absolute bottom-4 right-4 h-24 w-36 rounded-2xl border border-white/20 bg-slate-900 object-cover shadow-xl sm:bottom-5 sm:right-5 sm:h-32 sm:w-48 ${isCameraOff ? 'opacity-0' : ''}`}/>}
-          </div>
-          <div className="flex items-center justify-center gap-3 px-5 py-5">
-            {callStatus === 'incoming' ? <><button type="button" onClick={declineCall} className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white transition hover:bg-rose-500" aria-label="Decline call"><HiOutlinePhoneMissedCall className="h-5 w-5"/></button><button type="button" onClick={() => answerCall(incomingCall)} className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white transition hover:bg-emerald-400" aria-label="Answer call">{callType === 'video' ? <HiOutlineVideoCamera className="h-5 w-5"/> : <HiOutlinePhone className="h-5 w-5"/>}</button></> : <>
-              <button type="button" onClick={() => { const next = !isMuted; localStreamRef.current?.getAudioTracks().forEach((track) => { track.enabled = !next; }); setIsMuted(next); }} className={`relative flex h-12 w-12 items-center justify-center rounded-full transition ${isMuted ? 'bg-white text-slate-900' : 'bg-white/10 text-white hover:bg-white/20'}`} aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}><HiOutlineMicrophone className="h-5 w-5"/>{isMuted && <span className="absolute h-0.5 w-6 rotate-45 rounded bg-rose-500"/>}</button>
-              {callType === 'video' && <button type="button" onClick={() => { const next = !isCameraOff; localStreamRef.current?.getVideoTracks().forEach((track) => { track.enabled = !next; }); setIsCameraOff(next); }} className={`flex h-12 w-12 items-center justify-center rounded-full transition ${isCameraOff ? 'bg-white text-slate-900' : 'bg-white/10 text-white hover:bg-white/20'}`} aria-label={isCameraOff ? 'Turn camera on' : 'Turn camera off'}><HiOutlineVideoCamera className="h-5 w-5"/></button>}
-              <button type="button" onClick={endCall} className="flex h-12 w-14 items-center justify-center rounded-full bg-rose-600 text-white transition hover:bg-rose-500" aria-label="End call"><HiOutlinePhoneMissedCall className="h-5 w-5"/></button>
-            </>}
-          </div>
-        </div>
-      </div>}
-      {callError && callStatus === 'idle' && <div className="fixed bottom-5 right-5 z-[110] flex max-w-sm items-start gap-3 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl dark:border-rose-900 dark:bg-surface-800 dark:text-slate-100"><span className="flex-1">{callError}</span><button type="button" onClick={() => setCallError('')} aria-label="Dismiss call message" className="text-slate-400 hover:text-slate-700"><HiOutlineX className="h-4 w-4"/></button></div>}
+
     </div>
   );
 };
