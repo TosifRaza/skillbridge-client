@@ -25,8 +25,8 @@ const WorkerLayout = () => {
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'there';
 
   return (
-    <div className="portal-shell min-h-screen bg-[#f6f4ff] text-surface-800 dark:bg-surface-950 dark:text-surface-100">
-      <aside className="worker-sidebar portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[266px] flex-col text-white lg:flex">
+    <div className={`portal-shell ${isChat ? 'chat-workspace-shell' : 'min-h-screen'} bg-[#f6f4ff] text-surface-800 dark:bg-surface-950 dark:text-surface-100`}>
+      <aside className={`worker-sidebar portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[266px] flex-col text-white lg:flex ${isChat ? '!hidden' : ''}`}>
         <Link to="/worker/home" className="flex h-[86px] items-center gap-3 border-b border-white/10 px-[30px]">
           <span className="brand-mark h-[40px] w-[40px] rounded-[13px] text-lg">S</span>
           <span className="text-[20px] font-extrabold tracking-tight">SkillBridge</span>
@@ -61,8 +61,8 @@ const WorkerLayout = () => {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-col lg:pl-[266px]">
-        <header className={`portal-topbar sticky top-0 z-30 flex h-[86px] items-center justify-between border-b border-violet-100/80 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-7 ${isChat ? 'max-md:h-16 max-md:border-transparent max-md:bg-[#f7f3ff] max-md:dark:bg-slate-950' : ''}`}>
+      <div className={isChat ? 'flex h-full min-h-0 w-full flex-col' : 'flex min-h-screen flex-col lg:pl-[266px]'}>
+        <header className={`${isChat ? 'hidden' : 'portal-topbar sticky top-0 z-30 flex h-[86px] items-center justify-between border-b border-violet-100/80 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-7'}`}>
           <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><span className={isChat ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7823ef] to-[#4421cd] text-xl text-white' : 'brand-mark h-9 w-9'}>{isChat ? <HiLightningBolt /> : 'S'}</span><span className={`font-bold tracking-tight ${isChat ? 'max-md:text-[19px] max-md:text-[#130e2f] max-md:dark:text-white' : ''}`}>SkillBridge</span></Link>
           <div className="hidden items-center gap-4 lg:flex">
             <span className="flex h-[54px] w-[54px] items-center justify-center rounded-[17px] bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"><HiOutlineSparkles className="h-7 w-7" /></span>
@@ -81,9 +81,9 @@ const WorkerLayout = () => {
             </Link>
           </div>
         </header>
-        <main className={`portal-main worker-main mx-auto w-full max-w-[1500px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-7 lg:px-16 lg:pb-10 lg:pt-8 ${isChat ? 'max-md:p-0' : ''}`}><Outlet /></main>
+        <main className={`portal-main worker-main ${isChat ? 'h-full min-h-0 w-full flex-1 overflow-hidden p-0' : 'mx-auto w-full max-w-[1500px] flex-1 px-4 pb-24 pt-6 sm:px-7 sm:pt-7 lg:px-16 lg:pb-10 lg:pt-8'}`}><Outlet /></main>
       </div>
-      <nav aria-label="Worker navigation" className={`portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden ${isChat ? 'max-md:pb-[max(4px,env(safe-area-inset-bottom))]' : ''}`}>
+      <nav aria-label="Worker navigation" className={`${isChat ? 'hidden' : 'portal-mobile-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden'}`}>
         {navItems.map(({ icon: Icon, path }, index) => <NavLink key={path} to={path} end={path === '/worker/home'} className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''} ${isChat ? `max-md:mx-0.5 max-md:min-h-[58px] max-md:font-semibold ${isActive ? 'max-md:bg-violet-100 max-md:text-violet-700 max-md:dark:bg-violet-950/40' : ''}` : ''}`}><Icon className="h-[22px] w-[22px]"/><span>{mobileLabels[index]}</span></NavLink>)}
       </nav>
 

@@ -101,7 +101,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
 
-        saveAuthForRole(action.payload.user, action.payload.accessToken);
+        saveAuthForRole(action.payload.user, action.payload.accessToken, action.payload.refreshToken);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -117,7 +117,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
 
-        saveAuthForRole(action.payload.user, action.payload.accessToken);
+        saveAuthForRole(action.payload.user, action.payload.accessToken, action.payload.refreshToken);
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;

@@ -37,8 +37,8 @@ const CustomerLayout = () => {
   const hasJobUpdates = isJobsList && jobsWithOffers !== null ? jobsWithOffers > 0 : pendingProposalCount > 0;
 
   return (
-      <div className={`portal-shell min-h-screen bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100 ${compactHeader ? 'max-md:bg-[#f8f6fd] max-md:dark:bg-slate-950' : ''}`}>
-        <aside className="portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col text-white lg:flex">
+      <div className={`portal-shell ${isChat ? 'chat-workspace-shell' : 'min-h-screen'} bg-[#f5f7fc] text-surface-800 dark:bg-surface-950 dark:text-surface-100 ${compactHeader ? 'max-md:bg-[#f8f6fd] max-md:dark:bg-slate-950' : ''}`}>
+        <aside className={`portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[264px] flex-col text-white lg:flex ${isChat ? '!hidden' : ''}`}>
           <Link to="/customer/home" className="flex h-[68px] items-center gap-3 px-6">
             <span className="brand-mark h-9 w-9 text-sm">S</span><span className="text-[18px] font-bold tracking-tight">SkillBridge</span>
           </Link>
@@ -64,8 +64,8 @@ const CustomerLayout = () => {
           </div>
         </aside>
 
-        <div className="flex min-h-screen flex-col lg:pl-[264px]">
-          <header className={`portal-topbar sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:h-[62px] sm:px-6 lg:px-8 ${compactHeader ? 'max-md:border-transparent max-md:bg-[#f8f6fd]/95 max-md:dark:bg-slate-950/95' : ''} ${isChat ? 'max-md:h-16' : isWallet ? 'max-md:h-[65px]' : ''}`}>
+        <div className={isChat ? 'flex h-full min-h-0 w-full flex-col' : 'flex min-h-screen flex-col lg:pl-[264px]'}>
+          <header className={`${isChat ? 'hidden' : `portal-topbar sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:h-[62px] sm:px-6 lg:px-8 ${compactHeader ? 'max-md:border-transparent max-md:bg-[#f8f6fd]/95 max-md:dark:bg-slate-950/95' : ''} ${isWallet ? 'max-md:h-[65px]' : ''}`}`}>
             <Link to="/customer/home" className="flex items-center gap-2.5 lg:hidden">
               {isWallet && <span aria-hidden="true" className="grid h-[35px] w-[35px] place-items-center rounded-full bg-gradient-to-br from-[#8249fa] to-[#500cca] text-base font-bold text-white md:hidden">S</span>}
               <span className={`${isJobsList || isChat ? 'flex h-10 w-10 items-center justify-center rounded-[13px] bg-gradient-to-br from-[#7423f2] to-[#4012cd] text-2xl text-white' : 'brand-mark flex h-10 w-10 items-center justify-center rounded-[14px] text-xl'} ${isWallet ? 'max-md:hidden' : ''}`}><HiLightningBolt /></span>
@@ -90,9 +90,9 @@ const CustomerLayout = () => {
               </Link>
             </div>
           </header>
-          <main className={`portal-main mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 pb-24 sm:px-5 sm:pt-4 lg:px-6 lg:pb-8 ${isChat ? 'max-md:p-0' : ''}`}><Outlet context={setJobsWithOffers} /></main>
+          <main className={`portal-main ${isChat ? 'h-full min-h-0 w-full flex-1 overflow-hidden p-0' : 'mx-auto w-full max-w-[1600px] flex-1 px-3 py-3 pb-24 sm:px-5 sm:pt-4 lg:px-6 lg:pb-8'}`}><Outlet context={setJobsWithOffers} /></main>
         </div>
-        <nav aria-label="Customer navigation" className={`fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden ${isWallet ? 'max-md:pt-1.5 max-md:shadow-none' : ''}`}>
+        <nav aria-label="Customer navigation" className={`${isChat ? 'hidden' : `fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.25rem)] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/95 lg:hidden ${isWallet ? 'max-md:pt-1.5 max-md:shadow-none' : ''}`}`}>
           {mobileNavItems.map(({ icon: Icon, label, path }) => (
             <NavLink key={path} to={path} end={path === '/customer/home'} className={({ isActive }) => `mx-0.5 flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[18px] px-1 text-[10px] font-semibold transition ${isWallet ? 'max-md:min-h-[52px] max-md:gap-0.5 max-md:text-[11px]' : ''} ${isActive ? `${isWallet ? 'md:bg-violet-50 md:dark:bg-violet-950/50' : 'bg-violet-50 dark:bg-violet-950/50'} text-violet-700 dark:text-violet-300` : 'text-slate-500 dark:text-slate-400'}`}>
               {({ isActive }) => <><span className={isWallet ? `grid min-h-[25px] w-full max-w-[56px] place-items-center rounded-full ${isActive ? 'max-md:bg-violet-100 max-md:dark:bg-violet-950/60' : ''}` : ''}><Icon className="h-[22px] w-[22px]" /></span><span>{label}</span></>}

@@ -21,7 +21,7 @@ const HomePage = () => {
     <div className="relative overflow-hidden">
       
       {/* ================= HERO SECTION ================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 lg:pt-28 lg:pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12 sm:pt-16 sm:pb-16 lg:pt-28 lg:pb-24">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="animate-slide-up text-center lg:text-left">
             <Badge variant="success" className="mb-4">🚀 Now Live in Top Cities</Badge>

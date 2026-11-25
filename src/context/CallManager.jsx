@@ -124,6 +124,30 @@ export const CallManagerProvider = ({ children }) => {
         }, 20000);
       }
     };
+    peer.oniceconnectionstatechange = () => {
+      if (activeRef.current !== active) return;
+      if (['connected', 'completed'].includes(peer.iceConnectionState)) {
+        window.clearTimeout(connectionTimer.current);
+        active.startedAt ||= Date.now();
+        update({ status: 'connected' });
+      } else if (peer.iceConnectionState === 'checking') {
+        update({ status: 'connecting' });
+        window.clearTimeout(connectionTimer.current);
+        connectionTimer.current = window.setTimeout(() => {
+          if (activeRef.current === active && !['connected', 'completed'].includes(peer.iceConnectionState)) {
+            update({ status: 'failed', error: 'Could not establish a network path. Check the connection and try again.' });
+          }
+        }, 25000);
+      } else if (['disconnected', 'failed'].includes(peer.iceConnectionState)) {
+        update({ status: 'reconnecting' });
+        window.clearTimeout(connectionTimer.current);
+        connectionTimer.current = window.setTimeout(() => {
+          if (activeRef.current === active && ['disconnected', 'failed'].includes(peer.iceConnectionState)) {
+            update({ status: 'failed', error: 'Network connection could not be restored. Check mobile data or Wi-Fi and try again.' });
+          }
+        }, 20000);
+      }
+    };
     active.stream?.getTracks().forEach((track) => peer.addTrack(track, active.stream));
     return peer;
   }, [restartIce, socket, update]);
@@ -191,7 +215,10 @@ export const CallManagerProvider = ({ children }) => {
       for (const candidate of active.candidates.splice(0)) await peer.addIceCandidate(candidate).catch(() => {});
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
-      socket.emit('call-answer', { conversationId: active.call.conversationId, callId: active.call.callId, answer: peer.localDescription });
+      socket.timeout(8000).emit('call-answer', { conversationId: active.call.conversationId, callId: active.call.callId, answer: peer.localDescription }, (timeoutError, result) => {
+        if (activeRef.current !== active) return;
+        if (timeoutError || !result?.ok) update({ status: 'failed', error: result?.message || 'The answer could not reach the caller. Check the connection and try again.' });
+      });
       active.status = 'connecting';
       active.timeout = window.setTimeout(() => {
         if (activeRef.current === active && !active.startedAt) update({ status: 'failed', error: 'The call did not connect. Check your connection or try again.' });

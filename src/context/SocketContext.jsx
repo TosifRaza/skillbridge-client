@@ -25,9 +25,17 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('connect_error', (err) => console.error('🔴 Socket Error:', err.message));
       newSocket.on('disconnect', () => console.log('🔴 Socket Disconnected'));
 
+      const updateSocketToken = (event) => {
+        if (event.detail?.accessToken) newSocket.auth = { token: event.detail.accessToken };
+      };
+      window.addEventListener('skillbridge:access-token', updateSocketToken);
+
       setSocket(newSocket);
 
-      return () => newSocket.close();
+      return () => {
+        window.removeEventListener('skillbridge:access-token', updateSocketToken);
+        newSocket.close();
+      };
     } else {
       setSocket(null);
     }
