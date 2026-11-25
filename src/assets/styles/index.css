@@ -30,6 +30,12 @@ html {
   overflow: hidden;
 }
 
+/* Android 15+ draws edge-to-edge by default. Reserve its bottom system-bar
+   area on immersive chat pages so the composer stays clear of navigation. */
+.native-android-app .chat-workspace-shell {
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 24px));
+}
+
 body {
   min-width: 320px;
 }

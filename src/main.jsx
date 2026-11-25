@@ -20,7 +20,12 @@ import App from './App';
 import { store } from './store';
 import { Provider } from 'react-redux';
 import { SocketProvider } from '@/context/SocketContext';
+import { Capacitor } from '@capacitor/core';
 import './assets/styles/index.css';
+
+if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+  document.documentElement.classList.add('native-android-app');
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
