@@ -260,6 +260,11 @@ const PublicLayout = () => {
         {mobileMenuOpen && (
           <div id="public-mobile-menu" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-surface-100 bg-white shadow-medium animate-fade-in dark:border-surface-700 dark:bg-surface-900 lg:hidden">
             <div className="p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl border border-primary-200 px-3 text-sm font-bold text-primary-700 transition hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-950/40">Login</Link>
+                <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-primary-600 px-3 text-sm font-bold text-white transition hover:bg-primary-700">Registration</Link>
+              </div>
+
               <select 
                 value={city} 
                 onChange={(e) => dispatch(setCity(e.target.value))}
@@ -267,11 +272,6 @@ const PublicLayout = () => {
               >
                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl border border-primary-200 px-3 text-sm font-bold text-primary-700 transition hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-950/40">Login</Link>
-                <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-primary-600 px-3 text-sm font-bold text-white transition hover:bg-primary-700">Registration</Link>
-              </div>
               
               {/* Mobile Appearance Toggle */}
               <div className="flex items-center justify-between mt-4 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg">
