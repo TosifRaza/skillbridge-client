@@ -36,7 +36,12 @@ export const loginUser = createAsyncThunk(
       const response = await axiosInstance.post('/auth/login', credentials);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      if (!error.response) {
+        return rejectWithValue(
+          'Unable to reach the server. Check your internet connection and app server configuration, then try again.'
+        );
+      }
+      return rejectWithValue(error.response.data?.message || 'Sign in failed. Please try again.');
     }
   }
 );
@@ -53,7 +58,7 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
+export const logoutUser = createAsyncThunk('auth/logout', async () => {
   try {
     await axiosInstance.post('/auth/logout');
   } catch (e) {
