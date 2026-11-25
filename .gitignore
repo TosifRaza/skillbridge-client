@@ -24,4 +24,6 @@ dist-ssr
 *.sw?
 node_modules/
 .env
+.env.android
+.env.android.local
 dist/

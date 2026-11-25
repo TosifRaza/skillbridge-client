@@ -4,8 +4,19 @@ import { useSocket } from '@/context/SocketContext';
 import axiosInstance from '@/api/axiosInstance';
 import Avatar from '@/components/ui/Avatar';
 import { CallContext, useCallManager } from '@/context/CallManagerContext';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 const initialState = { status: 'idle', call: null, callType: null, localStream: null, remoteStream: null, muted: false, cameraOff: false, speakerOff: false, minimized: false, duration: 0, error: '' };
+const NativeCallService = registerPlugin('CallForegroundService');
+
+const setNativeCallActive = (call, active) => {
+  if (!Capacitor.isNativePlatform()) return;
+  const operation = active ? NativeCallService.start({
+    callType: call?.callType || 'audio',
+    participantName: call?.participant?.fullName || call?.caller?.name || 'SkillBridge contact',
+  }) : NativeCallService.stop();
+  void operation.catch(() => {});
+};
 
 const getIceServers = async () => {
   try {
@@ -34,6 +45,7 @@ export const CallManagerProvider = ({ children }) => {
     const active = activeRef.current;
     activeRef.current = null;
     window.clearTimeout(active?.timeout);
+    if (active) setNativeCallActive(active.call, false);
     active?.peer?.close();
     active?.stream?.getTracks().forEach((track) => track.stop());
     update(initialState);
@@ -120,6 +132,7 @@ export const CallManagerProvider = ({ children }) => {
     try {
       active.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' ? { facingMode: 'user' } : false });
       if (activeRef.current !== active) { active.stream.getTracks().forEach((track) => track.stop()); return; }
+      setNativeCallActive(call, true);
       update({ localStream: active.stream });
       const peer = await createPeer(active);
       const offer = await peer.createOffer();
@@ -147,6 +160,7 @@ export const CallManagerProvider = ({ children }) => {
     try {
       active.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: active.call.callType === 'video' ? { facingMode: 'user' } : false });
       if (activeRef.current !== active) { active.stream.getTracks().forEach((track) => track.stop()); return; }
+      setNativeCallActive(active.call, true);
       update({ localStream: active.stream });
       const peer = await createPeer(active);
       await peer.setRemoteDescription(active.call.offer);
@@ -296,6 +310,7 @@ export const CallManagerProvider = ({ children }) => {
     window.clearTimeout(connectionTimer.current);
     const active = activeRef.current;
     activeRef.current = null;
+    if (active) setNativeCallActive(active.call, false);
     active?.peer?.close();
     active?.stream?.getTracks().forEach((track) => track.stop());
   }, []);

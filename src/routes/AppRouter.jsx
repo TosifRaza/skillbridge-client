@@ -606,8 +606,7 @@
 // import PublicLayout from '@/components/layout/PublicLayout';
 // import CustomerLayout from '@/components/layout/CustomerLayout';
 // import WorkerLayout from '@/components/layout/WorkerLayout';
-// import DashboardLayout from '@/components/layout/DashboardLayout'; 
-
+// 
 // // Route Guards
 // import CustomerRoute from '@/routes/CustomerRoute';
 // import WorkerRoute from '@/routes/WorkerRoute';
@@ -698,12 +697,12 @@
 // ]);
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import NativeNavigationBridge from '@/components/native/NativeNavigationBridge';
 
 // Layouts
 import PublicLayout from '@/components/layout/PublicLayout';
 import CustomerLayout from '@/components/layout/CustomerLayout';
 import WorkerLayout from '@/components/layout/WorkerLayout';
-import DashboardLayout from '@/components/layout/DashboardLayout'; 
 
 // Route Guards
 import CustomerRoute from '@/routes/CustomerRoute';
@@ -751,7 +750,7 @@ import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminJobs from '@/pages/admin/AdminJobs';
 import AdminReports from '@/pages/admin/AdminReports';
 import AdminHome from '@/pages/admin/AdminHome';
-export const appRouter = createBrowserRouter([
+const appRoutes = [
   // PUBLIC
   { element: <PublicLayout />, children: [
     { path: '/', element: <HomePage /> },
@@ -811,4 +810,8 @@ export const appRouter = createBrowserRouter([
   // REDIRECTS
   { path: '/dashboard', element: <Navigate to="/customer/home" replace /> },
   { path: '*', element: <Navigate to="/" replace /> },
+];
+
+export const appRouter = createBrowserRouter([
+  { element: <NativeNavigationBridge />, children: appRoutes },
 ]);
