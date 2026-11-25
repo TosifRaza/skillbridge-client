@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:android": "node scripts/check-android-env.mjs && vite build --mode android && cap sync android",
+    "build:android": "node scripts/check-android-env.mjs && vite build --mode android && node scripts/prune-android-apk.mjs && cap sync android",
     "test": "vitest run",
     "lint": "eslint .",
     "preview": "vite preview",
