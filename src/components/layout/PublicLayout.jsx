@@ -147,6 +147,23 @@ import Button from '@/components/ui/Button';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { HiOutlineLocationMarker, HiMenu, HiX } from 'react-icons/hi';
+import {
+  HiOutlineBriefcase,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineCurrencyRupee,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineShieldCheck,
+  HiOutlineSquares2X2,
+} from 'react-icons/hi2';
+
+const mobileFooterLinks = [
+  { to: '/services', label: 'Services', Icon: HiOutlineSquares2X2 },
+  { to: '/become-provider', label: 'Become a Provider', Icon: HiOutlineBriefcase },
+  { to: '/how-it-works', label: 'How it Works', Icon: HiOutlineQuestionMarkCircle },
+  { to: '/safety', label: 'Safety & Trust', Icon: HiOutlineShieldCheck },
+  { to: '/pricing', label: 'Pricing', Icon: HiOutlineCurrencyRupee },
+  { to: '/contact', label: 'Contact Support', Icon: HiOutlineChatBubbleLeftRight },
+];
 
 const PublicLayout = () => {
   const dispatch = useAppDispatch();
@@ -155,7 +172,7 @@ const PublicLayout = () => {
   const [servicesOpen, setServicesOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-900 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-900 pb-[calc(7rem+env(safe-area-inset-bottom))] transition-colors duration-300 lg:pb-0">
       {/* Sticky Navbar */}
       <nav className="sticky top-0 z-50 bg-white/95 dark:bg-surface-900/95 backdrop-blur-lg border-b border-surface-200 dark:border-surface-700 shadow-soft transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -250,6 +267,11 @@ const PublicLayout = () => {
               >
                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl border border-primary-200 px-3 text-sm font-bold text-primary-700 transition hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-950/40">Login</Link>
+                <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-primary-600 px-3 text-sm font-bold text-white transition hover:bg-primary-700">Registration</Link>
+              </div>
               
               <p className="text-xs text-surface-400 dark:text-surface-500 font-bold uppercase mt-4 mb-2">Services</p>
               {PHASE_1_SERVICES.map(service => (
@@ -273,10 +295,6 @@ const PublicLayout = () => {
                 <DarkModeToggle />
               </div>
 
-              <div className="flex gap-2 mt-4">
-                <Link to="/auth/login" className="flex-1"><Button variant="outline" className="w-full">Log In</Button></Link>
-                <Link to="/auth/register" className="flex-1"><Button className="w-full">Sign Up</Button></Link>
-              </div>
             </div>
           </div>
         )}
@@ -299,12 +317,13 @@ const PublicLayout = () => {
           <div>
             <h4 className="text-white font-semibold mb-3">Services</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link to="/services" className="hover:text-white transition">All Services</Link></li>
               {PHASE_1_SERVICES.map(s => <li key={s.id}><Link to={s.slug} className="hover:text-white transition">{s.name}</Link></li>)}
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Company</h4>
-            <ul className="space-y-2 text-sm"><li><Link to="/how-it-works" className="hover:text-white transition">How it Works</Link></li><li><Link to="/safety" className="hover:text-white transition">Safety</Link></li><li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li><li><Link to="/contact" className="hover:text-white transition">Contact</Link></li></ul>
+            <ul className="space-y-2 text-sm"><li><Link to="/how-it-works" className="hover:text-white transition">How it Works</Link></li><li><Link to="/safety" className="hover:text-white transition">Safety & Trust</Link></li><li><Link to="/pricing" className="hover:text-white transition">Pricing</Link></li><li><Link to="/contact" className="hover:text-white transition">Contact Support</Link></li></ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Workers</h4>
@@ -312,6 +331,23 @@ const PublicLayout = () => {
           </div>
         </div>
       </footer>
+
+      {/* Mobile app-style footer navigation */}
+      <nav aria-label="Mobile footer navigation" className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200 bg-white/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_28px_rgba(24,18,58,0.08)] backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/95 lg:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-3 gap-1">
+          {mobileFooterLinks.map(({ to, label, Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              aria-label={label}
+              className={({ isActive }) => `flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-center text-[10px] font-semibold leading-tight transition ${isActive ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300' : 'text-surface-500 hover:bg-surface-50 dark:text-surface-400 dark:hover:bg-surface-800'}`}
+            >
+              <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
