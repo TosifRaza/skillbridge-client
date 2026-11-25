@@ -1,6 +1,7 @@
 """Create platform-sized copies of the supplied SkillBridge logo image."""
 
 from pathlib import Path
+import shutil
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -35,7 +36,11 @@ for density, size in (("mdpi", 108), ("hdpi", 162), ("xhdpi", 216), ("xxhdpi", 3
     output = logo.resize((size, size), Image.Resampling.LANCZOS)
     save_png(ANDROID_RES / f"mipmap-{density}" / "ic_launcher.png", output)
     save_png(ANDROID_RES / f"mipmap-{density}" / "ic_launcher_round.png", output)
-    save_png(ANDROID_RES / f"mipmap-{density}" / "ic_launcher_foreground.png", Image.new("RGBA", (size, size), (0, 0, 0, 0)))
+
+# Keep the original artwork intact in an unscaled, density-independent adaptive icon background.
+adaptive_background = ANDROID_RES / "drawable-nodpi" / "skillbridge_launcher_background.png"
+adaptive_background.parent.mkdir(parents=True, exist_ok=True)
+shutil.copyfile(SOURCE, adaptive_background)
 
 def splash(width: int, height: int) -> Image.Image:
     background_color = logo.getpixel((0, 0))
