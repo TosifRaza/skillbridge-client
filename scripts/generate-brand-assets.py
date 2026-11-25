@@ -37,7 +37,6 @@ for density, size in (("mdpi", 108), ("hdpi", 162), ("xhdpi", 216), ("xxhdpi", 3
     save_png(ANDROID_RES / f"mipmap-{density}" / "ic_launcher_round.png", output)
     save_png(ANDROID_RES / f"mipmap-{density}" / "ic_launcher_foreground.png", Image.new("RGBA", (size, size), (0, 0, 0, 0)))
 
-save_png(ANDROID_RES / "drawable" / "ic_launcher_background.png", logo.resize((432, 432), Image.Resampling.LANCZOS))
 def splash(width: int, height: int) -> Image.Image:
     background_color = logo.getpixel((0, 0))
     image = Image.new("RGBA", (width, height), background_color)
