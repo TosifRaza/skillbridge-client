@@ -145,6 +145,7 @@ import { PHASE_1_SERVICES } from '@/constants/services';
 import { CITIES } from '@/constants/locations';
 import Button from '@/components/ui/Button';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { HiOutlineLocationMarker, HiMenu, HiX } from 'react-icons/hi';
 
 const PublicLayout = () => {
@@ -161,8 +162,7 @@ const PublicLayout = () => {
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-            <span className="text-xl font-bold text-surface-900 dark:text-white">SkillBridge</span>
+            <BrandLogo markClassName="h-9 w-9" wordmarkClassName="text-xl font-extrabold tracking-tight text-surface-900 dark:text-white" />
           </Link>
 
           {/* Desktop Nav Links */}
@@ -292,8 +292,7 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">S</div>
-              <span className="text-xl font-bold text-white">SkillBridge</span>
+              <BrandLogo markClassName="h-9 w-9" wordmarkClassName="text-xl font-extrabold tracking-tight text-white" />
             </div>
             <p className="text-sm">Every problem gets a solution, and every worker gets an opportunity.</p>
           </div>

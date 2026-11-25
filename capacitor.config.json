@@ -3,19 +3,19 @@
   "appName": "SkillBridge",
   "webDir": "dist",
   "bundledWebRuntime": false,
-  "backgroundColor": "#f6f4ff",
+  "backgroundColor": "#5528d6",
   "android": {
     "allowMixedContent": false
   },
   "plugins": {
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#4f25d0",
+      "backgroundColor": "#5528d6",
       "overlaysWebView": false
     },
     "SplashScreen": {
       "launchShowDuration": 1600,
-      "backgroundColor": "#4f25d0",
+      "backgroundColor": "#5528d6",
       "showSpinner": false
     }
   }

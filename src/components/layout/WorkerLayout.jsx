@@ -3,7 +3,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import Avatar from '@/components/ui/Avatar';
-import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiLightningBolt, HiOutlineBell } from 'react-icons/hi';
+import BrandLogo from '@/components/ui/BrandLogo';
+import { HiOutlineHome, HiOutlineSearch, HiOutlineClipboardList, HiOutlineChatAlt, HiOutlineLogout, HiOutlineSparkles, HiOutlineCreditCard, HiOutlineChevronDown, HiOutlineBell } from 'react-icons/hi';
 
 const navItems = [
   { icon: HiOutlineHome, label: 'Overview', path: '/worker/home' },
@@ -28,14 +29,13 @@ const WorkerLayout = () => {
     <div className={`portal-shell ${isChat ? 'chat-workspace-shell' : 'min-h-screen'} bg-[#f6f4ff] text-surface-800 dark:bg-surface-950 dark:text-surface-100`}>
       <aside className={`worker-sidebar portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-[266px] flex-col text-white lg:flex ${isChat ? '!hidden' : ''}`}>
         <Link to="/worker/home" className="flex h-[86px] items-center gap-3 border-b border-white/10 px-[30px]">
-          <span className="brand-mark h-[40px] w-[40px] rounded-[13px] text-lg">S</span>
-          <span className="text-[20px] font-extrabold tracking-tight">SkillBridge</span>
+          <BrandLogo markClassName="h-10 w-10" wordmarkClassName="text-[20px] font-extrabold tracking-tight text-white" />
         </Link>
 
         <div className="px-4 pt-4">
           <p className="px-4 text-[11px] font-semibold uppercase tracking-[.12em] text-violet-200/90">Worker space</p>
           <div className="mt-2 flex min-h-[98px] items-center gap-3 rounded-[17px] border border-white/[.04] bg-white/[.08] px-4 py-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-violet-500/25 text-violet-200"><HiLightningBolt className="h-6 w-6" /></span>
+            <BrandLogo showName={false} markClassName="h-10 w-10" />
             <div><p className="text-[14px] font-bold leading-5">Make your next move</p><p className="mt-1 text-[12px] leading-[1.45] text-violet-100/75">Discover great projects and grow your reputation.</p></div>
           </div>
         </div>
@@ -63,7 +63,7 @@ const WorkerLayout = () => {
 
       <div className={isChat ? 'flex h-full min-h-0 w-full flex-col' : 'flex min-h-screen flex-col lg:pl-[266px]'}>
         <header className={`${isChat ? 'hidden' : 'portal-topbar sticky top-0 z-30 flex h-[86px] items-center justify-between border-b border-violet-100/80 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-surface-900/90 sm:px-7 lg:px-7'}`}>
-          <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><span className={isChat ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7823ef] to-[#4421cd] text-xl text-white' : 'brand-mark h-9 w-9'}>{isChat ? <HiLightningBolt /> : 'S'}</span><span className={`font-bold tracking-tight ${isChat ? 'max-md:text-[19px] max-md:text-[#130e2f] max-md:dark:text-white' : ''}`}>SkillBridge</span></Link>
+          <Link to="/worker/home" className="flex items-center gap-2.5 lg:hidden"><BrandLogo markClassName="h-9 w-9" wordmarkClassName={`font-bold tracking-tight ${isChat ? 'text-[19px] text-[#130e2f] dark:text-white' : 'text-[17px] text-slate-900 dark:text-white'}`} /></Link>
           <div className="hidden items-center gap-4 lg:flex">
             <span className="flex h-[54px] w-[54px] items-center justify-center rounded-[17px] bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"><HiOutlineSparkles className="h-7 w-7" /></span>
             <div><p className="text-[18px] font-bold leading-tight text-slate-900 dark:text-white">Good to see you, {displayName}</p><p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">Find, apply, and manage your work on SkillBridge.</p></div>

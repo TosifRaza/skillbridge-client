@@ -16,7 +16,7 @@ const getPreview = (message, userId) => {
     return `${callType} ${state}`;
   }
   const imageCount = message.imageUrls?.length || (message.imageUrl ? 1 : 0);
-  const attachmentPreview = message.attachment?.name || (imageCount > 1 ? `${imageCount} photos shared` : imageCount === 1 ? 'Photo shared' : 'New message');
+  const attachmentPreview = message.type === 'audio' ? 'Voice message' : message.type === 'location' ? 'Location shared' : message.attachment?.name || (imageCount > 1 ? `${imageCount} photos shared` : imageCount === 1 ? 'Photo shared' : 'New message');
   const text = message.text?.trim() || attachmentPreview;
   const senderId = message.sender?._id || message.sender;
   return senderId && userId && senderId.toString() === userId.toString() ? `You: ${text}` : text;

@@ -1,0 +1,23 @@
+{
+  "name": "SkillBridge",
+  "short_name": "SkillBridge",
+  "description": "Find trusted experts and discover meaningful work.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f5ff",
+  "theme_color": "#5528d6",
+  "icons": [
+    {
+      "src": "/icons/skillbridge-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/skillbridge-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

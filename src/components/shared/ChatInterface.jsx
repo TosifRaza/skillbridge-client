@@ -224,20 +224,24 @@
 // };
 
 // export default ChatInterface;
-import { Fragment, useEffect, useState, useRef } from 'react';
+import { Fragment, Suspense, lazy, useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchChatHistory, addSocketMessage, updateSocketMessage, uploadChatImage, clearChat, markMessagesRead } from '@/store/slices/chatSlice';
 import { useSocket } from '@/context/SocketContext';
 import { useCallManager } from '@/context/CallManagerContext';
 import axiosInstance from '@/api/axiosInstance';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import { HiOutlinePaperAirplane, HiOutlinePhotograph, HiOutlineArrowLeft, HiOutlineDotsVertical, HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCalendar, HiOutlineCurrencyDollar, HiOutlineShieldCheck, HiOutlinePhone, HiOutlineVideoCamera, HiOutlineX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
-import { LuCheck, LuCheckCheck, LuClipboardCheck, LuDownload, LuFileText, LuPlus, LuSmile } from 'react-icons/lu';
+import { LuCheck, LuCheckCheck, LuClipboardCheck, LuDownload, LuFileText, LuPlus, LuSmile, LuMapPin, LuCamera, LuMic, LuSticker, LuX, LuCircleStop } from 'react-icons/lu';
 import { FaBroom } from 'react-icons/fa';
 import './ChatInterface.mobile.css';
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
 
 const formatCallTime = (value) => value
   ? new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -256,11 +260,10 @@ const formatCallDuration = (value) => {
 };
 
 const messageDay = (value) => value ? new Date(value).toDateString() : '';
+const stickers = ['😀', '🥰', '😂', '🥳', '😊', '🙏', '👍', '❤️', '🎉', '🔥', '💯', '🤝', '✨', '😎', '🤗', '👏'];
 const dayLabel = (value) => messageDay(value) === new Date().toDateString()
   ? 'Today'
   : new Date(value).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
-const emojis = ['🙂', '👍', '😊', '🙏', '✅', '🎉'];
-
 const SelectedPhoto = ({ file, index }) => {
   const imageRef = useRef(null);
   useEffect(() => {
@@ -280,11 +283,15 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   
   const [messageInput, setMessageInput] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
+  const [recordingBlob, setRecordingBlob] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [locationPending, setLocationPending] = useState(false);
+  const [audioSources, setAudioSources] = useState({});
   const [lightbox, setLightbox] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
   const [composerMenu, setComposerMenu] = useState(null);
   const [messageError, setMessageError] = useState('');
   const [showCompletion, setShowCompletion] = useState(false);
@@ -294,13 +301,19 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const { status: callStatus, startCall } = useCallManager();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const documentInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const composerInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const recorderRef = useRef(null);
+  const recordingStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingCancelledRef = useRef(false);
+  const recordingTimerRef = useRef(null);
+  const audioUrlsRef = useRef([]);
   const participantName = project?.participant?.fullName || otherUserEmail?.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || (userRole === 'customer' ? 'Your worker' : 'Customer');
   const ProjectIcon = project?.category === 'House Cleaning' ? FaBroom : HiOutlineBriefcase;
   const canComplete = userRole === 'provider' && project?._id && ['Assigned', 'In-Progress'].includes(project.status) && !project.workSubmittedAt && !completionSent;
-  const hasDraft = messageInput.trim() || selectedImages.length > 0 || selectedDocument;
+  const hasDraft = messageInput.trim() || selectedImages.length > 0 || recordingBlob;
   const formattedBudget = project?.budget != null ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(project.budget) : null;
   const formattedDeadline = project?.deadline ? new Date(project.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
   useEffect(() => {
@@ -318,6 +331,12 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [lightbox]);
+
+  useEffect(() => () => {
+    window.clearInterval(recordingTimerRef.current);
+    recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+    audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   // Fetch History & Join Room
   useEffect(() => {
@@ -457,7 +476,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!hasDraft || isSending) return;
-    if (!selectedDocument && (!socket || socket.connected === false)) {
+    if (!recordingBlob && (!socket || socket.connected === false)) {
       setMessageError('Connecting to chat. Please try again in a moment.');
       return;
     }
@@ -466,11 +485,12 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     setMessageError('');
     setComposerMenu(null);
     try {
-      if (selectedDocument) {
+      if (recordingBlob) {
+        if (recordingBlob.size > 5 * 1024 * 1024) throw new Error('This recording is too large. Please record a shorter message.');
+        const extension = recordingBlob.type.includes('mp4') ? 'm4a' : recordingBlob.type.includes('ogg') ? 'ogg' : 'webm';
         const form = new FormData();
-        form.append('file', selectedDocument);
-        form.append('text', messageInput.trim());
-        const response = await axiosInstance.post(`/chat/${conversationId}/files`, form, {
+        form.append('file', recordingBlob, `voice-message.${extension}`);
+        const response = await axiosInstance.post(`/chat/${conversationId}/audio`, form, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         dispatch(addSocketMessage(response.data.data));
@@ -498,7 +518,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       socket?.emit('stop-typing', conversationId);
       setMessageInput('');
       setSelectedImages([]);
-      setSelectedDocument(null);
+      setRecordingBlob(null);
     } catch (error) {
       setMessageError(error.response?.data?.message || error.message || String(error));
     } finally {
@@ -522,7 +542,7 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
     const oversizedFile = files.find((file) => file.size > 5 * 1024 * 1024);
     const remainingSlots = Math.max(0, 5 - selectedImages.length);
     setMessageError('');
-    if (selectedDocument) setMessageError('Remove the PDF before adding photos.');
+    if (recordingBlob || isRecording) setMessageError('Send or remove the voice recording before adding photos.');
     else if (invalidType) setMessageError('Please choose image files only.');
     else if (oversizedFile) setMessageError('Each image must be smaller than 5 MB.');
     else {
@@ -530,17 +550,6 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       setSelectedImages((current) => [...current, ...files.slice(0, remainingSlots)]);
     }
     e.target.value = '';
-  };
-
-  const handleDocumentUpload = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    setMessageError('');
-    if (selectedImages.length) setMessageError('Remove the photos before adding a PDF.');
-    else if (!/\.pdf$/i.test(file.name)) setMessageError('Choose a PDF file.');
-    else if (file.size > 5 * 1024 * 1024) setMessageError('The PDF must be smaller than 5 MB.');
-    else setSelectedDocument(file);
   };
 
   const downloadDocument = async (message) => {
@@ -576,6 +585,134 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
   const openPicker = (ref) => {
     setComposerMenu(null);
     ref.current?.click();
+  };
+
+  const emitChatMessage = async (messageData) => {
+    if (!socket || socket.connected === false) throw new Error('Connecting to chat. Please try again in a moment.');
+    const response = await new Promise((resolve, reject) => {
+      if (typeof socket.timeout === 'function') {
+        socket.timeout(12000).emit('send-message', messageData, (error, result) => error ? reject(error) : resolve(result));
+      } else {
+        socket.emit('send-message', messageData, resolve);
+      }
+    });
+    if (response?.status !== 'ok') throw new Error(response?.message || 'Message could not be sent. Please try again.');
+    if (response.message) dispatch(addSocketMessage(response.message));
+  };
+
+  const shareCurrentLocation = () => {
+    setComposerMenu(null);
+    setMessageError('');
+    if (!Capacitor.isNativePlatform() && !navigator.geolocation) {
+      setMessageError('Location sharing is not supported by this browser.');
+      return;
+    }
+    if (!socket || socket.connected === false) {
+      setMessageError('Connecting to chat. Please try again in a moment.');
+      return;
+    }
+    setLocationPending(true);
+    (async () => {
+      try {
+        const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+        const { latitude, longitude, accuracy } = position.coords;
+        await emitChatMessage({
+          conversationId,
+          text: 'Shared their current location',
+          type: 'location',
+          location: { latitude, longitude, accuracy },
+        });
+      } catch (error) {
+        const message = error.code === 1 || /denied|permission/i.test(error.message || '')
+          ? 'Allow location access in your browser or app settings to share your location.'
+          : error.code === 3 || /timeout/i.test(error.message || '') ? 'Getting your location took too long. Please try again.' : 'Could not get your current location. Please try again.';
+        setMessageError(message);
+      } finally {
+        setLocationPending(false);
+      }
+    })();
+  };
+
+  const startAudioRecording = async () => {
+    setComposerMenu(null);
+    setMessageError('');
+    if (selectedImages.length) {
+      setMessageError('Send or remove the selected photos before recording audio.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setMessageError('Audio recording is not supported by this browser.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
+      recordingStreamRef.current = stream;
+      recorderRef.current = recorder;
+      recordingChunksRef.current = [];
+      recordingCancelledRef.current = false;
+      recorder.ondataavailable = (event) => { if (event.data.size) recordingChunksRef.current.push(event.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recorderRef.current = null;
+        if (!recordingCancelledRef.current && blob.size) {
+          if (blob.size > 5 * 1024 * 1024) setMessageError('Recording is over 5 MB. Please record a shorter message.');
+          else setRecordingBlob(blob);
+        }
+        setIsRecording(false);
+      };
+      recorder.onerror = () => {
+        window.clearInterval(recordingTimerRef.current);
+        setMessageError('Recording failed. Please check your microphone and try again.');
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        setIsRecording(false);
+      };
+      recorder.start();
+      setRecordingSeconds(0);
+      setIsRecording(true);
+      recordingTimerRef.current = window.setInterval(() => setRecordingSeconds((seconds) => seconds + 1), 1000);
+    } catch (error) {
+      setMessageError(error.name === 'NotAllowedError' ? 'Allow microphone access in your browser settings to record audio.' : 'Could not start audio recording. Check that your microphone is available.');
+    }
+  };
+
+  const stopAudioRecording = (cancel = false) => {
+    recordingCancelledRef.current = cancel;
+    window.clearInterval(recordingTimerRef.current);
+    if (cancel) setRecordingBlob(null);
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    else {
+      recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+      recordingStreamRef.current = null;
+      setIsRecording(false);
+    }
+  };
+
+  const sendSticker = async (sticker) => {
+    setComposerMenu(null);
+    setMessageError('');
+    try {
+      await emitChatMessage({ conversationId, text: sticker, type: 'sticker' });
+    } catch (error) {
+      setMessageError(error.message || 'Could not send sticker.');
+    }
+  };
+
+  const loadAudio = async (message) => {
+    try {
+      setMessageError('');
+      const { data } = await axiosInstance.get(`/chat/${conversationId}/files/${message._id}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      audioUrlsRef.current.push(url);
+      setAudioSources((current) => ({ ...current, [message._id]: url }));
+    } catch {
+      setMessageError('Could not load this voice message. Please try again.');
+    }
   };
 
   return (
@@ -660,9 +797,14 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
             <Fragment key={msg._id || idx}>{dateDivider}<div className={`project-chat-row flex ${isMine ? 'justify-end' : 'justify-start'}`}>
               {!isMine && <span aria-hidden="true" className="project-chat-sender md:hidden">{project?.participant?.avatar?.url ? <img src={project.participant.avatar.url} alt="" /> : participantName.charAt(0).toUpperCase()}</span>}
               <div className={`project-chat-bubble ${isMine ? 'is-mine' : 'is-theirs'} ${imageUrls.length ? 'has-photos max-w-[82%] overflow-hidden rounded-[20px] border border-slate-200 bg-white p-1.5 shadow-[0_8px_26px_rgba(15,23,42,.1)] dark:border-surface-700 dark:bg-surface-800 sm:max-w-[70%]' : `max-w-[82%] rounded-[18px] px-4 py-2.5 shadow-[0_5px_18px_rgba(15,23,42,.06)] sm:max-w-[70%] ${isMine ? 'rounded-br-[5px] bg-gradient-to-br from-primary-600 to-violet-600 text-white' : 'rounded-bl-[5px] border border-slate-200/80 bg-white text-surface-800 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100'}`}`}>
+                {msg.type === 'sticker' && <span className="project-chat-sticker" role="img" aria-label="Sticker">{msg.text}</span>}
+                {msg.type === 'location' && msg.location && <div className="project-chat-location"><span><LuMapPin aria-hidden="true" /></span><div><strong>Shared location</strong><small>Location at the time it was sent</small><a href={`https://maps.google.com/?q=${msg.location.latitude},${msg.location.longitude}`} target="_blank" rel="noreferrer">Open in Maps</a></div></div>}
+                {msg.type === 'audio' && msg.attachment?.name && (audioSources[msg._id]
+                  ? <audio className="project-chat-audio" controls preload="none" src={audioSources[msg._id]}>Your browser cannot play this audio.</audio>
+                  : <button type="button" className="project-chat-audio-load" onClick={() => loadAudio(msg)}><LuMic aria-hidden="true" /><span>Play voice message</span></button>)}
                 {imageUrls.length > 0 && <div className={galleryClass}>{visibleImages.map((imageUrl, imageIndex) => <button key={`${imageUrl}-${imageIndex}`} type="button" onClick={() => setLightbox({ images: imageUrls, index: imageIndex })} aria-label={`Open image ${imageIndex + 1} of ${imageUrls.length}`} className={`group relative min-w-0 overflow-hidden rounded-xl bg-slate-100 text-left outline-none focus-visible:ring-4 focus-visible:ring-primary-400 dark:bg-surface-900 ${imageUrls.length === 3 && imageIndex === 0 ? 'row-span-2' : ''}`}><img src={imageUrl} alt={`Shared attachment ${imageIndex + 1}`} className={`h-full w-full object-contain transition duration-200 group-hover:scale-[1.02] ${imageUrls.length === 1 ? 'max-h-[320px] rounded-xl' : ''}`}/><span className="pointer-events-none absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/10"/>{imageIndex === 3 && imageUrls.length > 4 && <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/55 text-2xl font-bold text-white">+{imageUrls.length - 3}</span>}</button>)}</div>}
-                {msg.attachment?.name && <button type="button" onClick={() => downloadDocument(msg)} className="project-chat-file" aria-label={`Download ${msg.attachment.name}`}><LuFileText aria-hidden="true"/><span>{msg.attachment.name}</span><LuDownload aria-hidden="true"/></button>}
-                {msg.text && <p className={`project-chat-text whitespace-pre-wrap text-[13px] leading-5 ${imageUrls.length ? 'px-3 pb-1 pt-2 text-slate-800 dark:text-slate-100' : ''}`}>{msg.text}</p>}
+                {msg.attachment?.name && msg.type !== 'audio' && <button type="button" onClick={() => downloadDocument(msg)} className="project-chat-file" aria-label={`Download ${msg.attachment.name}`}><LuFileText aria-hidden="true"/><span>{msg.attachment.name}</span><LuDownload aria-hidden="true"/></button>}
+                {msg.text && msg.type !== 'location' && <p className={`project-chat-text whitespace-pre-wrap text-[13px] leading-5 ${imageUrls.length ? 'px-3 pb-1 pt-2 text-slate-800 dark:text-slate-100' : ''}`}>{msg.text}</p>}
                 <p className={`project-chat-time mt-1.5 text-right text-[10px] ${imageUrls.length ? 'px-2 pb-1 text-slate-400' : isMine ? 'text-indigo-100/80' : 'text-surface-400'}`}>
                   <time dateTime={msg.createdAt}>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</time>
                   {isMine && <span role="img" aria-label={readByPeer ? 'Read' : 'Sent'}><Receipt aria-hidden="true" /></span>}
@@ -681,18 +823,19 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
       </div>
 
       {/* Message Input */}
-      <div className="project-chat-composer shrink-0 border-t border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6 sm:py-4">
+      <div className="project-chat-composer relative shrink-0 border-t border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur dark:border-surface-700 dark:bg-surface-800/90 sm:px-6 sm:py-4">
         <div className="mx-auto w-full max-w-4xl">
         {messageError && <p role="alert" className="project-chat-error">{messageError}</p>}
         {selectedImages.length > 0 && <div className="mb-2 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-2.5 dark:border-surface-700 dark:bg-surface-800"><div className="flex gap-2 overflow-x-auto pb-1">{selectedImages.map((image, index) => <div key={`${image.name}-${image.lastModified}-${index}`} className="relative shrink-0"><SelectedPhoto file={image} index={index} /><button type="button" onClick={() => setSelectedImages((current) => current.filter((_, imageIndex) => imageIndex !== index))} aria-label={`Remove image ${index + 1}`} className="absolute -right-1.5 -top-1.5 rounded-full bg-slate-900 p-1 text-white shadow hover:bg-rose-600"><HiOutlineX className="h-3 w-3"/></button></div>)}</div></div>}
-        {selectedDocument && <div className="project-chat-draft-file"><LuFileText aria-hidden="true" /><span>{selectedDocument.name}</span><button type="button" aria-label="Remove PDF" onClick={() => setSelectedDocument(null)}><HiOutlineX aria-hidden="true" /></button></div>}
+        {isRecording && <div className="project-chat-recording" role="status"><span className="project-chat-recording-dot" />Recording {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}<button type="button" onClick={() => stopAudioRecording(true)} aria-label="Cancel recording"><LuX aria-hidden="true"/>Cancel</button><button type="button" onClick={() => stopAudioRecording()} aria-label="Stop recording"><LuCircleStop aria-hidden="true"/>Stop</button></div>}
+        {recordingBlob && !isRecording && <div className="project-chat-recording" role="status"><LuMic aria-hidden="true"/><span>Voice message ready</span><button type="button" onClick={() => setRecordingBlob(null)} aria-label="Remove voice message"><LuX aria-hidden="true"/>Remove</button></div>}
         <form onSubmit={handleSendMessage} className="project-chat-form flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-inner shadow-slate-200/40 focus-within:border-primary-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-primary-500/10 dark:border-surface-700 dark:bg-surface-900 dark:shadow-none dark:focus-within:bg-surface-900">
           <button type="button" aria-label="Attach image" onClick={() => openPicker(fileInputRef)} className="hidden shrink-0 rounded-xl p-2.5 text-slate-400 transition hover:bg-white hover:text-primary-600 dark:hover:bg-surface-700 md:block">
             <HiOutlinePhotograph className="h-5 w-5" />
           </button>
-          <button type="button" aria-label="Attachment options" aria-expanded={composerMenu === 'attachments'} onClick={() => setComposerMenu(composerMenu === 'attachments' ? null : 'attachments')} className="project-chat-plus md:hidden"><LuPlus aria-hidden="true" /></button>
+          <button type="button" aria-label="Attachment options" aria-expanded={composerMenu === 'attachments'} onClick={() => setComposerMenu(composerMenu === 'attachments' ? null : 'attachments')} className="project-chat-plus"><LuPlus aria-hidden="true" /></button>
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
-          <input type="file" ref={documentInputRef} className="hidden" accept="application/pdf,.pdf" onChange={handleDocumentUpload} />
+          <input type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleImageUpload} />
           <div className="project-chat-input flex min-w-0 flex-1 items-center">
             <input
               ref={composerInputRef}
@@ -705,17 +848,34 @@ const ChatInterface = ({ conversationId, otherUserEmail, currentUserEmail, proje
             />
             <button type="button" aria-label="Choose emoji" aria-expanded={composerMenu === 'emoji'} onClick={() => setComposerMenu(composerMenu === 'emoji' ? null : 'emoji')} className="project-chat-emoji md:hidden"><LuSmile aria-hidden="true" /></button>
           </div>
-          <Button type="submit" aria-label="Send message" disabled={isSending || !hasDraft || (!socket && !selectedDocument)} className="project-chat-send shrink-0 rounded-xl p-2.5 shadow-md shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50">
+          <Button type="submit" aria-label={recordingBlob ? 'Send voice message' : 'Send message'} disabled={isSending || isRecording || !hasDraft || (!socket && !recordingBlob)} className="project-chat-send shrink-0 rounded-xl p-2.5 shadow-md shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50">
             {isSending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/> : <HiOutlinePaperAirplane className="h-5 w-5" />}
           </Button>
         </form>
-        {composerMenu === 'attachments' && <div className="project-chat-popover md:hidden" aria-label="Attachment options"><button type="button" onClick={() => openPicker(fileInputRef)}><HiOutlinePhotograph aria-hidden="true" />Photo</button><button type="button" onClick={() => openPicker(documentInputRef)}><LuFileText aria-hidden="true" />PDF file</button></div>}
-        {composerMenu === 'emoji' && <div className="project-chat-popover project-chat-emojis md:hidden" aria-label="Emojis">{emojis.map((emoji) => <button type="button" key={emoji} onClick={() => { handleDraftChange(`${messageInput}${emoji}`); setComposerMenu(null); composerInputRef.current?.focus(); }}>{emoji}</button>)}</div>}
-        <div className="project-chat-quick md:hidden">
-          <button type="button" onClick={() => openPicker(fileInputRef)}><HiOutlinePhotograph aria-hidden="true" />Send Photo</button>
-          <button type="button" onClick={() => openPicker(documentInputRef)}><LuFileText aria-hidden="true" />Send File</button>
-          {canComplete && <button type="button" aria-expanded={showCompletion} onClick={() => { setComposerMenu(null); setShowCompletion(true); }}><LuClipboardCheck aria-hidden="true" />Mark Complete</button>}
-        </div>
+        {composerMenu === 'attachments' && <div className="project-chat-popover" aria-label="Attachment options">
+          <button type="button" onClick={() => openPicker(cameraInputRef)}><LuCamera aria-hidden="true" />Camera</button>
+          <button type="button" onClick={() => openPicker(fileInputRef)}><HiOutlinePhotograph aria-hidden="true" />Gallery</button>
+          <button type="button" disabled={locationPending} onClick={shareCurrentLocation}><LuMapPin aria-hidden="true" />{locationPending ? 'Getting location…' : 'Share location'}</button>
+          <button type="button" disabled={isRecording || Boolean(recordingBlob)} onClick={startAudioRecording}><LuMic aria-hidden="true" />Record audio</button>
+          <button type="button" onClick={() => setComposerMenu('stickers')}><LuSticker aria-hidden="true" />Stickers</button>
+          {canComplete && <button type="button" onClick={() => { setComposerMenu(null); setShowCompletion(true); }}><LuClipboardCheck aria-hidden="true" />Mark complete</button>}
+        </div>}
+        {composerMenu === 'stickers' && <div className="project-chat-popover project-chat-stickers" aria-label="Choose a sticker">{stickers.map((sticker) => <button type="button" key={sticker} aria-label={`Send ${sticker} sticker`} onClick={() => sendSticker(sticker)}>{sticker}</button>)}</div>}
+        {composerMenu === 'emoji' && <div className="project-chat-popover project-chat-emoji-picker-popover" aria-label="Choose an emoji">
+          <Suspense fallback={<div className="project-chat-emoji-loading">Loading emojis…</div>}>
+            <EmojiPicker
+              onEmojiClick={(emojiData) => handleDraftChange(`${messageInput}${emojiData.emoji}`)}
+              colorScheme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+              height="min(350px, 54dvh)"
+              width="100%"
+              lazyLoadEmojis
+              autoFocusSearch={false}
+              previewConfig={{ showPreview: false }}
+              searchPlaceholder="Search emojis"
+              className="skillbridge-emoji-picker"
+            />
+          </Suspense>
+        </div>}
         </div>
       </div>
       </section>

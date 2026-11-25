@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/slices/authSlice';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
+import BrandLogo from '@/components/ui/BrandLogo';
 import {
   HiOutlineLogout,
   HiOutlineHome,
@@ -58,8 +59,8 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-surface-50 text-surface-900 transition-colors dark:bg-surface-950 dark:text-white">
       <aside className="portal-sidebar fixed inset-y-0 left-0 z-40 hidden w-64 flex-col text-white lg:flex">
         <div className="flex h-[68px] items-center gap-3 border-b border-white/10 px-6">
-          <span className="brand-mark h-9 w-9 rounded-xl bg-rose-500 text-sm">A</span>
-          <div><p className="font-bold">SkillBridge</p><p className="text-[10px] uppercase tracking-widest text-slate-400">Admin workspace</p></div>
+          <BrandLogo markClassName="h-9 w-9" wordmarkClassName="font-bold text-white" />
+          <span className="sr-only">Admin workspace</span>
         </div>
         <AdminNavigation />
         <div className="mt-auto border-t border-white/10 p-3">
@@ -75,7 +76,7 @@ const AdminLayout = () => {
           <button className="absolute inset-0 bg-slate-950/50" onClick={() => setMobileNavOpen(false)} aria-label="Close menu" />
           <div className="portal-sidebar absolute inset-y-0 left-0 flex w-[min(84vw,320px)] flex-col text-white shadow-2xl">
             <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
-              <div className="flex items-center gap-3"><span className="brand-mark h-9 w-9 rounded-xl bg-rose-500 text-sm">A</span><span className="font-bold">Admin workspace</span></div>
+              <div className="flex items-center gap-3"><BrandLogo markClassName="h-9 w-9" wordmarkClassName="font-bold text-white" /></div>
               <button onClick={() => setMobileNavOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Close menu"><HiX className="h-5 w-5" /></button>
             </div>
             <AdminNavigation onNavigate={() => setMobileNavOpen(false)} />
