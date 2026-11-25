@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
       on: vi.fn((event, handler) => listeners.set(event, handler)),
       off: vi.fn((event) => listeners.delete(event)),
       emit: vi.fn(),
+      timeout: vi.fn(() => ({ emit: (...args) => mocks.socket.emit(...args) })),
     },
   };
 });
@@ -97,6 +98,7 @@ describe('chat audio/video calling', () => {
     mocks.socket.emit.mockReset();
     mocks.socket.emit.mockImplementation((event, _payload, acknowledgement) => {
       if (event === 'send-message') acknowledgement?.({ status: 'ok' });
+      if (event === 'call-initiate') acknowledgement?.(null, { ok: true, delivered: true });
     });
     FakePeerConnection.instances = [];
     mediaStream = makeStream();
@@ -116,7 +118,7 @@ describe('chat audio/video calling', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start audio call' }));
     await waitFor(() => expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true, video: false }));
-    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ conversationId: 'job_test', callType: 'audio', offer: { type: 'offer', sdp: 'fake-offer' } })));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ conversationId: 'job_test', callType: 'audio', offer: { type: 'offer', sdp: 'fake-offer' } }), expect.any(Function)));
 
     const peer = FakePeerConnection.instances[0];
     const callId = mocks.socket.emit.mock.calls.find(([event]) => event === 'call-initiate')[1].callId;
@@ -175,7 +177,7 @@ describe('chat audio/video calling', () => {
     renderChat();
 
     await user.click(screen.getByRole('button', { name: 'Start video call' }));
-    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'video' })));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'video' }), expect.any(Function)));
     await user.click(screen.getByRole('button', { name: 'Mute microphone' }));
     await user.click(screen.getByRole('button', { name: 'Turn camera off' }));
 
@@ -189,7 +191,7 @@ describe('chat audio/video calling', () => {
     const user = userEvent.setup();
     renderChat();
     await user.click(screen.getByRole('button', { name: 'Start audio call' }));
-    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' })));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' }), expect.any(Function)));
     await user.click(screen.getByRole('button', { name: 'Minimize call' }));
 
     expect(screen.getByRole('button', { name: 'Open call' })).toBeTruthy();
@@ -204,7 +206,7 @@ describe('chat audio/video calling', () => {
     const user = userEvent.setup();
     renderChatWithNavigation();
     await user.click(screen.getByRole('button', { name: 'Start audio call' }));
-    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' })));
+    await waitFor(() => expect(mocks.socket.emit).toHaveBeenCalledWith('call-initiate', expect.objectContaining({ callType: 'audio' }), expect.any(Function)));
     await user.click(screen.getByRole('button', { name: 'Minimize call' }));
     await user.click(screen.getByRole('button', { name: 'Open profile' }));
 

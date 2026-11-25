@@ -6,11 +6,55 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 import androidx.core.content.ContextCompat;
+import android.Manifest;
+import android.net.Uri;
+import android.provider.Settings;
 
-@CapacitorPlugin(name = "CallForegroundService")
+@CapacitorPlugin(name = "CallForegroundService", permissions = {
+    @Permission(alias = "microphone", strings = { Manifest.permission.RECORD_AUDIO }),
+    @Permission(alias = "camera", strings = { Manifest.permission.CAMERA })
+})
 public class CallForegroundServicePlugin extends Plugin {
+    @PluginMethod
+    public void requestMediaPermissions(PluginCall call) {
+        String callType = call.getString("callType", "audio");
+        if ("video".equals(callType)) {
+            requestPermissionForAliases(new String[] { "microphone", "camera" }, call, "mediaPermissionsCallback");
+        } else {
+            requestPermissionForAlias("microphone", call, "mediaPermissionsCallback");
+        }
+    }
+
+    @PermissionCallback
+    private void mediaPermissionsCallback(PluginCall call) {
+        boolean microphoneGranted = getPermissionState("microphone") == PermissionState.GRANTED;
+        boolean cameraGranted = "video".equals(call.getString("callType", "audio"))
+            ? getPermissionState("camera") == PermissionState.GRANTED : true;
+        JSObject result = new JSObject();
+        result.put("granted", microphoneGranted && cameraGranted);
+        result.put("microphone", microphoneGranted);
+        result.put("camera", cameraGranted);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", getContext().getPackageName(), null));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("Could not open app settings", error);
+        }
+    }
+
     @PluginMethod
     public void start(PluginCall call) {
         String callType = call.getString("callType", "audio");

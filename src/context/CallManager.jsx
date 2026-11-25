@@ -6,8 +6,21 @@ import Avatar from '@/components/ui/Avatar';
 import { CallContext, useCallManager } from '@/context/CallManagerContext';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-const initialState = { status: 'idle', call: null, callType: null, localStream: null, remoteStream: null, muted: false, cameraOff: false, speakerOff: false, minimized: false, duration: 0, error: '' };
+const initialState = { status: 'idle', call: null, callType: null, localStream: null, remoteStream: null, muted: false, cameraOff: false, speakerOff: false, minimized: false, duration: 0, error: '', permissionDenied: false };
 const NativeCallService = registerPlugin('CallForegroundService');
+
+const requestMediaAccess = async (callType) => {
+  if (Capacitor.isNativePlatform()) {
+    const permission = await NativeCallService.requestMediaPermissions({ callType });
+    if (!permission?.granted) {
+      const error = new Error('media-permission-denied');
+      error.name = 'NotAllowedError';
+      throw error;
+    }
+  }
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('Media capture is unavailable in this browser.');
+  return navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' ? { facingMode: 'user' } : false });
+};
 
 const setNativeCallActive = (call, active) => {
   if (!Capacitor.isNativePlatform()) return;
@@ -117,8 +130,8 @@ export const CallManagerProvider = ({ children }) => {
 
   const startCall = useCallback(async ({ type, callType = type, conversationId, participant }) => {
     if (activeRef.current) return;
-    if (!socket || !conversationId || !participant?._id) {
-      update({ error: 'Calls are unavailable because this conversation has no connected participant.' });
+    if (!socket?.connected || !conversationId || !participant?._id) {
+      update({ error: !socket?.connected ? 'Call service is reconnecting. Please wait a moment and try again.' : 'Calls are unavailable because this conversation has no connected participant.' });
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -130,14 +143,25 @@ export const CallManagerProvider = ({ children }) => {
     activeRef.current = active;
     update({ ...initialState, status: 'calling', call, callType, minimized: false });
     try {
-      active.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' ? { facingMode: 'user' } : false });
+      active.stream = await requestMediaAccess(callType);
       if (activeRef.current !== active) { active.stream.getTracks().forEach((track) => track.stop()); return; }
       setNativeCallActive(call, true);
       update({ localStream: active.stream });
       const peer = await createPeer(active);
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
-      socket.emit('call-initiate', { ...call, participant: undefined, offer: peer.localDescription });
+      socket.timeout(8000).emit('call-initiate', { ...call, participant: undefined, offer: peer.localDescription }, (timeoutError, result) => {
+        if (activeRef.current !== active) return;
+        if (timeoutError || !result?.ok) {
+          window.clearTimeout(active.timeout);
+          cleanup();
+          update({ error: result?.message || 'Could not reach the other person. Check their connection and try again.' });
+        } else if (!result.delivered) {
+          emitForCall('call-end', { reason: 'no-answer' });
+          cleanup();
+          update({ error: 'They are offline right now. Ask them to open SkillBridge, then try calling again.' });
+        }
+      });
       active.timeout = window.setTimeout(() => {
         if (activeRef.current === active && !active.startedAt) {
           emitForCall('call-end', { reason: 'no-answer' });
@@ -147,8 +171,8 @@ export const CallManagerProvider = ({ children }) => {
       }, 45000);
     } catch (error) {
       cleanup();
-      update({ error: error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError'
-        ? 'Allow camera and microphone access in your browser settings, then try again.'
+      update({ permissionDenied: error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError', error: error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError'
+        ? (Capacitor.isNativePlatform() ? 'Camera or microphone permission is needed for this call. Allow it and try again.' : 'Allow camera and microphone access in your browser settings, then try again.')
         : 'Could not start your camera or microphone. Check that the devices are available.' });
     }
   }, [cleanup, createPeer, emitForCall, socket, update]);
@@ -158,7 +182,7 @@ export const CallManagerProvider = ({ children }) => {
     if (!active || active.status !== 'incoming' || !navigator.mediaDevices?.getUserMedia) return;
     update({ status: 'connecting', error: '' });
     try {
-      active.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: active.call.callType === 'video' ? { facingMode: 'user' } : false });
+      active.stream = await requestMediaAccess(active.call.callType);
       if (activeRef.current !== active) { active.stream.getTracks().forEach((track) => track.stop()); return; }
       setNativeCallActive(active.call, true);
       update({ localStream: active.stream });
@@ -177,7 +201,7 @@ export const CallManagerProvider = ({ children }) => {
       active.stream = null;
       active.peer?.close();
       active.peer = null;
-      update({ localStream: null, status: 'incoming', error: error.name === 'NotAllowedError' ? 'Allow camera and microphone access, then tap Answer again.' : 'Could not join the call. Check your camera and microphone.' });
+      update({ localStream: null, status: 'incoming', permissionDenied: error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError', error: error.name === 'NotAllowedError' ? (Capacitor.isNativePlatform() ? 'Allow camera and microphone permission, then tap Answer again.' : 'Allow camera and microphone access, then tap Answer again.') : 'Could not join the call. Check your camera and microphone.' });
     }
   }, [createPeer, socket, update]);
 
@@ -315,7 +339,8 @@ export const CallManagerProvider = ({ children }) => {
     active?.stream?.getTracks().forEach((track) => track.stop());
   }, []);
 
-  const value = useMemo(() => ({ ...state, startCall, answerCall, declineCall, endCall, toggleMute, toggleCamera, switchCamera, minimize: () => update({ minimized: true }), reopen: () => update({ minimized: false }), dismissError: () => update({ error: '' }), toggleSpeaker: () => update({ speakerOff: !stateRef.current.speakerOff }) }), [answerCall, declineCall, endCall, startCall, state, switchCamera, toggleCamera, toggleMute, update]);
+  const openAppSettings = useCallback(() => { if (Capacitor.isNativePlatform()) void NativeCallService.openAppSettings().catch(() => {}); }, []);
+  const value = useMemo(() => ({ ...state, startCall, answerCall, declineCall, endCall, toggleMute, toggleCamera, switchCamera, openAppSettings, minimize: () => update({ minimized: true }), reopen: () => update({ minimized: false }), dismissError: () => update({ error: '', permissionDenied: false }), toggleSpeaker: () => update({ speakerOff: !stateRef.current.speakerOff }) }), [answerCall, declineCall, endCall, openAppSettings, startCall, state, switchCamera, toggleCamera, toggleMute, update]);
   return <CallContext.Provider value={value}>{children}<GlobalCallView /></CallContext.Provider>;
 };
 
@@ -331,7 +356,7 @@ const GlobalCallView = () => {
   useEffect(() => { if (remoteVideo.current) remoteVideo.current.muted = call.speakerOff; }, [call.speakerOff, call.minimized]);
   useEffect(() => { if (localVideo.current && localVideo.current.srcObject !== call.localStream) localVideo.current.srcObject = call.localStream || null; if (localVideo.current) void Promise.resolve(localVideo.current.play()).catch(() => {}); }, [call.localStream, call.minimized]);
   useEffect(() => { if (remoteAudio.current && remoteAudio.current.srcObject !== call.remoteStream) remoteAudio.current.srcObject = call.remoteStream || null; if (remoteAudio.current) remoteAudio.current.muted = call.speakerOff; }, [call.remoteStream, call.speakerOff, call.minimized]);
-  if (call.status === 'idle') return call.error ? <div role="alert" className="fixed bottom-5 right-5 z-[210] flex max-w-sm items-center gap-3 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl"><span className="flex-1">{call.error}</span><button type="button" onClick={call.dismissError} aria-label="Dismiss call message"><HiOutlineX className="h-4 w-4"/></button></div> : null;
+  if (call.status === 'idle') return call.error ? <div role="alert" className="fixed bottom-5 right-5 z-[210] flex max-w-sm items-center gap-3 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-xl"><span className="flex-1">{call.error}{call.permissionDenied && Capacitor.isNativePlatform() && <button type="button" onClick={call.openAppSettings} className="mt-1 block font-semibold text-indigo-600 underline">Open app settings</button>}</span><button type="button" onClick={call.dismissError} aria-label="Dismiss call message"><HiOutlineX className="h-4 w-4"/></button></div> : null;
   const name = call.call?.caller?.name || call.call?.participant?.fullName || 'SkillBridge contact';
   const avatar = call.call?.caller?.avatar || call.call?.participant?.avatar?.url;
   const connected = call.status === 'connected';
@@ -356,7 +381,7 @@ const GlobalCallView = () => {
           <button type="button" onClick={call.switchCamera} aria-label="Switch camera" title="Switch camera" className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-black/55"><HiSwitchHorizontal/></button>
         </div>}
       </div>
-      {call.error && <p role="alert" className="border-t border-rose-400/20 bg-rose-950/40 px-5 py-2 text-center text-xs text-rose-200">{call.error}</p>}
+      {call.error && <div role="alert" className="border-t border-rose-400/20 bg-rose-950/40 px-5 py-2 text-center text-xs text-rose-200">{call.error}{call.permissionDenied && Capacitor.isNativePlatform() && <button type="button" onClick={call.openAppSettings} className="ml-2 font-semibold underline">Open app settings</button>}</div>}
       <footer className="flex items-center justify-center gap-3 px-4 py-4 sm:gap-4 sm:py-5">{call.status === 'incoming' ? <><button type="button" onClick={call.declineCall} aria-label="Decline call" className="grid h-14 w-14 place-items-center rounded-full bg-rose-600"><HiOutlinePhoneMissedCall className="h-6 w-6"/></button><button type="button" onClick={call.answerCall} aria-label="Answer call" className="grid h-14 w-14 place-items-center rounded-full bg-emerald-500">{call.callType === 'video' ? <HiOutlineVideoCamera className="h-6 w-6"/> : <HiOutlinePhone className="h-6 w-6"/>}</button></> : <><button type="button" onClick={call.toggleMute} aria-label={call.muted ? 'Unmute microphone' : 'Mute microphone'} className={`grid h-12 w-12 place-items-center rounded-full ${call.muted ? 'bg-white text-slate-900' : 'bg-white/10'}`}><HiOutlineMicrophone/></button>{call.callType === 'video' && <><button type="button" onClick={call.toggleCamera} aria-label={call.cameraOff ? 'Turn camera on' : 'Turn camera off'} className={`grid h-12 w-12 place-items-center rounded-full ${call.cameraOff ? 'bg-white text-slate-900' : 'bg-white/10'}`}><HiOutlineVideoCamera/></button><button type="button" onClick={call.switchCamera} aria-label="Switch camera" className="grid h-12 w-12 place-items-center rounded-full bg-white/10"><HiSwitchHorizontal/></button></>}<button type="button" onClick={call.toggleSpeaker} aria-label={call.speakerOff ? 'Turn speaker on' : 'Turn speaker off'} className="grid h-12 w-12 place-items-center rounded-full bg-white/10">{call.speakerOff ? <HiVolumeOff/> : <HiVolumeUp/>}</button><button type="button" onClick={call.endCall} aria-label="End call" className="grid h-14 w-14 place-items-center rounded-full bg-rose-600"><HiOutlinePhoneMissedCall className="h-6 w-6"/></button></>}</footer>
     </div>
   </div>;
