@@ -284,17 +284,16 @@ const PublicLayout = () => {
 
       {/* Mobile app-style footer navigation */}
       <nav aria-label="Mobile footer navigation" className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200 bg-white/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_28px_rgba(24,18,58,0.08)] backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/95 lg:hidden">
-        <div className="-mx-2 flex w-max min-w-full snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mx-auto grid w-full max-w-lg grid-cols-6 gap-1">
           {mobileFooterLinks.map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
               aria-label={label}
               title={label}
-              className={({ isActive }) => `flex min-h-12 min-w-max snap-start flex-row items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold whitespace-nowrap transition ${isActive ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300' : 'text-surface-500 hover:bg-surface-50 dark:text-surface-400 dark:hover:bg-surface-800'}`}
+              className={({ isActive }) => `flex min-h-12 min-w-0 items-center justify-center rounded-xl transition ${isActive ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300' : 'text-surface-500 hover:bg-surface-50 dark:text-surface-400 dark:hover:bg-surface-800'}`}
             >
-              <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
-              <span>{label}</span>
+              <Icon aria-hidden="true" className="h-6 w-6 shrink-0" />
             </NavLink>
           ))}
         </div>
